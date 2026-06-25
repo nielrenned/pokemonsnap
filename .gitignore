@@ -8,6 +8,8 @@ expected/
 tools/ido5.3/
 tools/ido7.1/
 tools/asm_proc/
+tools/decomp-permuter/
+nonmatchings/
 
 *.bin
 *.ld
@@ -21,10 +23,10 @@ ctx.c
 ctx.c.m2c
 permuter_settings.toml
 undefined_funcs_auto.txt
-undefined_syms_auto.txt
 
 venv/
 .venv/
+*.egg-info/
 
 !/tools/build/
 

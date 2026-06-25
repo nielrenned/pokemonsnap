@@ -28,6 +28,7 @@ MAP_PATH = f"build/{BASENAME}.map"
 ELF_PATH = f"build/{BASENAME}.elf"
 Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
+PATCH_PATH = f"build/{BASENAME}.bsdiff"
 
 COMMON_INCLUDES = "-I include -I src -I ultralib/include -I ultralib/include/ido -I ultralib/include/PR -I ultralib/src -I build/include -I build -I ."
 IDO_DEFS = "-DF3DEX_GBI_2 -D_LANGUAGE_C -DNDEBUG -D_FINALROM"
@@ -281,6 +282,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         "z64",
         description="rom $out",
         command=f"{CROSS_OBJCOPY} $in $out -O binary",
+    )
+
+    ninja.rule(
+        "bsdiff",
+        description="bsdiff $out",
+        command=f"{sys.executable} tools/make_bsdiff.py {BASENAME}.z64 $in $out",
     )
 
     ninja.rule(
@@ -564,10 +571,10 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.build(
-        OK_PATH,
-        "sha1sum",
-        "checksum.sha1",
-        implicit=[Z64_PATH],
+        PATCH_PATH,
+        "bsdiff",
+        Z64_PATH,
+        implicit=[f"{BASENAME}.z64", "tools/make_bsdiff.py"],
     )
 
     ninja.build("img_incs", "phony", img_incs)
