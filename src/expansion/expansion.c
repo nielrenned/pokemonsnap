@@ -59,36 +59,52 @@ extern SObj* D_803B0A18_550E28;
 extern SObj* D_803B0A1C_550E2C;
 extern s32 func_8009BC68(void);
 
-u32 gExpansionMagic = 0x534E4150;
+// Client interface block (defined in iface.c, pinned at 0x80400000).
+extern u32 gExpansionMagic;
+extern s32 gMaxFilm;
+extern s32 gCanUseOverride;
+extern u32 gCanUseMask;
+extern s32 gCourseOverride;
+extern u32 gCourseUnlockMask;
 
-// Maximum film count. Below 60; settable at runtime.
-s32 gMaxFilm = 15;
-
-// While set, every item is usable regardless of its canUse flag (testing
-// default-on). Clear this once an external grantor drives the canUse flags.
-s32 gCanUseOverride = 1;
+s32 exp_canUse(s32 bit, s32 savedBit) {
+    return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
+}
 
 void expansion_init(void) {
     gExpansionMagic = 0x4F4B4159;
 }
 
+// Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
+// dispatcher still consumes the one-shot event bit, so it just doesn't display.
+void exp_noop(void) {
+}
+
 // Drives the dash engine's availability (icon + R-trigger boost) off canUse,
 // via the single checkPlayerFlag(DASH) call in initUI that builds ProgressFlags.
 s32 exp_dashAvailable(void) {
-    return gCanUseOverride || D_800C21B0_5F050->data.canUseDashEngine;
+    return exp_canUse(3, D_800C21B0_5F050->data.canUseDashEngine);
+}
+
+// Replaces the func_800BF864_5C704() (Pokedex count) call in initUI that gates
+// the in-course tutorial: marks the tutorial finished (persisted) and returns a
+// count >= 4 so IsTutorialEnabled is forced false.
+s32 exp_tutorialDone(void) {
+    D_800C21B0_5F050->data.hasFinishedTutorial = 1;
+    return 4;
 }
 
 void exp_handleItemButtonsPress(GObj* obj) {
     if (!IsInputDisabled) {
         if ((gContInputPressedButtons & D_CBUTTONS) &&
-            (gCanUseOverride || D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
+            exp_canUse(2, D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
             LastItemId = ITEM_ID_POKEFLUTE;
             PressPokeFluteTimeout = 45;
             Icons_ProcessButtonPress(ITEM_ID_POKEFLUTE);
             Items_PlayPokeFlute();
         } else if (ThrowItemTimeout == 0) {
             if ((gContInputPressedButtons & B_BUTTON) &&
-                (gCanUseOverride || D_800C21B0_5F050->data.canUsePesterBall)) {
+                exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall)) {
                 LastItemId = ITEM_ID_PESTER_BALL;
                 ThrowItemTimeout = 45;
                 Items_SpawnPesterBall(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
@@ -97,7 +113,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
                 Icons_ProcessButtonPress(-1);
                 PressPokeFluteTimeout = 0;
             } else if ((gContInputPressedButtons & A_BUTTON) &&
-                       (gCanUseOverride || D_800C21B0_5F050->data.canUseApple)) {
+                       exp_canUse(0, D_800C21B0_5F050->data.canUseApple)) {
                 LastItemId = ITEM_ID_APPLE;
                 ThrowItemTimeout = 45;
                 Items_SpawnApple(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
@@ -159,9 +175,9 @@ void exp_Icons_Init(void) {
     u32 progressFlags;
     SpriteStruct* spr;
     SpriteDefStruct* sprDef;
-    s32 apple = gCanUseOverride || D_800C21B0_5F050->data.canUseApple;
-    s32 pester = gCanUseOverride || D_800C21B0_5F050->data.canUsePesterBall;
-    s32 flute = gCanUseOverride || D_800C21B0_5F050->data.canUseFlute;
+    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
 
     progressFlags = getProgressFlags();
     Icons_ItemFlags = 0;
@@ -277,3 +293,48 @@ void exp_awardItems(s32 score) {
 }
 
 #pragma GLOBAL_ASM("src/expansion/award_detour.s")
+
+extern UIButton* D_80195CEC_95B50C[];
+extern void UILayout_CreateButtons(UIButton*);
+
+// While set, every course is selectable regardless of its courseX flag
+// (testing default-on). Clear once an external grantor drives the course flags.
+static UIButton sCourseButtons[12];
+
+static s32 exp_courseUnlocked(s32 level) {
+    s32 saved;
+    switch (level) {
+        case 0: saved = D_800C21B0_5F050->data.courseBeach; break;
+        case 1: saved = D_800C21B0_5F050->data.courseTunnel; break;
+        case 2: saved = D_800C21B0_5F050->data.courseVolcano; break;
+        case 3: saved = D_800C21B0_5F050->data.courseCave; break;
+        case 4: saved = D_800C21B0_5F050->data.courseRiver; break;
+        case 5: saved = D_800C21B0_5F050->data.courseValley; break;
+        case 6: saved = D_800C21B0_5F050->data.courseRainbow; break;
+        default: saved = 0; break;
+    }
+    return ((gCourseUnlockMask >> level) & 1) || saved;
+}
+
+// Replaces UILayout_CreateButtons at the lab course-select sites. Builds the
+// button list from the full (rank-6) course list, keeping each course button
+// (ids 6..12) only if its flag is set (or override) and all non-course buttons.
+void exp_CreateCourseButtons(UIButton* rankList) {
+    UIButton* src = D_80195CEC_95B50C[6];
+    s32 n = 0;
+
+    while (src->id != 35 /* BUTTON_NONE */) {
+        s32 keep = 1;
+        if (src->id >= 6 && src->id <= 12) {
+            keep = gCourseOverride || exp_courseUnlocked(src->id - 6);
+        }
+        if (keep) {
+            sCourseButtons[n] = *src;
+            n++;
+        }
+        src++;
+    }
+    sCourseButtons[n].id = 35 /* BUTTON_NONE */;
+    sCourseButtons[n].text = NULL;
+    UILayout_CreateButtons(sCourseButtons);
+}

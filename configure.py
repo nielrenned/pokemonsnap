@@ -193,6 +193,8 @@ NULL = "int"
 
 EXPANSION_OBJ = Path("build/src/expansion/expansion.c.o")
 EXPANSION_SRC = ROOT / "src/expansion/expansion.c"
+IFACE_OBJ = Path("build/src/expansion/iface.c.o")
+IFACE_SRC = ROOT / "src/expansion/iface.c"
 EXPANSION_VRAM = 0x80400000
 
 
@@ -207,6 +209,8 @@ def add_expansion_segment_to_linker():
     .expansion {EXPANSION_VRAM:#x} : AT(expansion_ROM_START) SUBALIGN(16)
     {{
         FILL(0x00000000);
+        {IFACE_OBJ}(.data);
+        . = ALIGN(., 16);
         expansion_TEXT_START = .;
         {EXPANSION_OBJ}(.text);
         . = ALIGN(., 16);
@@ -214,6 +218,7 @@ def add_expansion_segment_to_linker():
         expansion_DATA_START = .;
         {EXPANSION_OBJ}(.data);
         {EXPANSION_OBJ}(.rodata);
+        {IFACE_OBJ}(.rodata);
         . = ALIGN(., 16);
         expansion_DATA_END = .;
     }}
@@ -226,6 +231,7 @@ def add_expansion_segment_to_linker():
     {{
         expansion_BSS_START = .;
         {EXPANSION_OBJ}(.bss);
+        {IFACE_OBJ}(.bss);
         . = ALIGN(., 16);
         expansion_BSS_END = .;
     }}
@@ -612,6 +618,7 @@ def create_build_script(linker_entries: List[LinkerEntry]):
             sys.exit(1)
 
     # Expansion segment (not managed by splat): compile and feed into the link
+    build(IFACE_OBJ, [IFACE_SRC], "cc", variables={"flags": "-O2"})
     build(EXPANSION_OBJ, [EXPANSION_SRC], "cc", variables={"flags": "-O2"})
 
     ninja.build(
