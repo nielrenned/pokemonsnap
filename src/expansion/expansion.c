@@ -1,9 +1,15 @@
 #include "common.h"
 #include "more_funcs/more_funcs.h"
 #include "app_level/app_level.h"
+#include "photo_check/photo_check.h"
 #include "sys/render.h"
+#include "PR/os_flash.h"
+#include "apdata.h"
 
 extern UnkBigBoy* D_800C21B0_5F050;
+extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
+extern s32 func_8009BB4C(s32);
+extern OSMesgQueue D_800E17A8_7E648; // flash message queue
 extern s32 IsInputDisabled;
 extern s32 ThrowItemTimeout;
 extern s32 PressPokeFluteTimeout;
@@ -78,6 +84,12 @@ void expansion_init(void) {
 // Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
 // dispatcher still consumes the one-shot event bit, so it just doesn't display.
 void exp_noop(void) {
+}
+
+// Returns max rank (6) so the course-select text lookup indexes the full
+// course list D_80195CEC_95B50C[6], making every shown course's text resolve.
+s32 exp_rank6(void) {
+    return 6;
 }
 
 // Drives the dash engine's availability (icon + R-trigger boost) off canUse,
@@ -337,4 +349,117 @@ void exp_CreateCourseButtons(UIButton* rankList) {
     sCourseButtons[n].id = 35 /* BUTTON_NONE */;
     sCourseButtons[n].text = NULL;
     UILayout_CreateButtons(sCourseButtons);
+}
+
+// Wraps score_CalculateScore at its call sites: after the real scoring, record
+// which bonus types this species earned into the persisted save (speciesBonus).
+// Bits: 0=special, 1=pose, 2=size, 3=technique, 4=samePkmn.
+// Page that the AP block lives at in FLASH: right after the main save.
+#define AP_FLASH_PAGE ((s32) ((sizeof(UnkBigBoy) + 0x7F) / 0x80))
+
+static u32 exp_apChecksum(void) {
+    u32 sum = 0;
+    u8* p = (u8*) gApData.speciesScores;
+    s32 i;
+    for (i = 0; i < (s32) sizeof(gApData.speciesScores); i++) {
+        sum += p[i];
+    }
+    return sum;
+}
+
+// Read the AP block from FLASH (page-aligned, no overrun since sizeof is 0x300).
+static void exp_apFlashRead(void) {
+    OSIoMesg mb;
+    u8* ram = (u8*) &gApData;
+    s32 page = AP_FLASH_PAGE;
+    s32 size = sizeof(gApData);
+
+    while (size > 0) {
+        osInvalDCache(ram, 0x80);
+        osFlashReadArray(&mb, 0, page, ram, 1, &D_800E17A8_7E648);
+        osRecvMesg(&D_800E17A8_7E648, NULL, 1);
+        ram += 0x80;
+        page++;
+        size -= 0x80;
+    }
+}
+
+// Write the AP block to FLASH. Must be called right after the main save: the
+// main write erases sector 7 (which also covers these spare pages), so they are
+// already blank here and we must NOT erase again (that would wipe the main save).
+static void exp_apFlashWrite(void) {
+    OSIoMesg mb;
+    u8* ram = (u8*) &gApData;
+    s32 page = AP_FLASH_PAGE;
+    s32 size = sizeof(gApData);
+
+    while (size > 0) {
+        osWritebackDCache(ram, 0x80);
+        osFlashWriteBuffer(&mb, 0, ram, &D_800E17A8_7E648);
+        osRecvMesg(&D_800E17A8_7E648, NULL, 1);
+        osFlashWriteArray(page);
+        ram += 0x80;
+        page++;
+        size -= 0x80;
+    }
+}
+
+void exp_apLoad(void) {
+    exp_apFlashRead();
+    if (gApData.magic != AP_MAGIC || gApData.checksum != exp_apChecksum()) {
+        u8* p = (u8*) &gApData;
+        s32 i;
+        for (i = 0; i < (s32) sizeof(gApData); i++) {
+            p[i] = 0;
+        }
+    }
+}
+
+void exp_apSave(void) {
+    gApData.magic = AP_MAGIC;
+    gApData.checksum = exp_apChecksum();
+    exp_apFlashWrite();
+}
+
+// Wraps the main-save flash write (func_800C09C0): on success, also persist AP.
+s32 exp_saveMain(uintptr_t addr, s32 size) {
+    s32 ret = func_800C09C0_5D860(addr, size);
+    if (ret == 0) {
+        exp_apSave();
+    }
+    return ret;
+}
+
+// Wraps the main-save flash read (func_800C06A8): also load+validate AP.
+s32 exp_loadMain(uintptr_t addr, s32 size) {
+    func_800C06A8_5D548(addr, size);
+    exp_apLoad();
+    return 0;
+}
+
+// Wraps score_CalculateScore: after scoring, record each species' best bonus
+// values into the AP block. Indices: 0=special,1=pose,2=size,3=technique,4=samePkmn.
+void exp_calcScore(ScoreData* score, PhotoData* photo, s32 id) {
+    s32 slot = func_8009BB4C(photo->pokemons[id].pokemonID);
+
+    score_CalculateScore(score, photo, id);
+
+    if (slot >= 0 && slot < (s32) ARRAY_COUNT(gApData.speciesScores)) {
+        u16* v = gApData.speciesScores[slot];
+        if (score->specialBonus > v[0]) {
+            v[0] = score->specialBonus;
+        }
+        if (score->posePts > v[1]) {
+            v[1] = score->posePts;
+        }
+        if (score->proximityScore > v[2]) {
+            v[2] = score->proximityScore;
+        }
+        if (score->completenessScore > v[3]) {
+            v[3] = score->completenessScore;
+        }
+        if (score->samePkmnBonus > v[4]) {
+            v[4] = score->samePkmnBonus;
+        }
+    }
 }

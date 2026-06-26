@@ -29,3 +29,14 @@ call:initUI+0x174 = exp_tutorialDone
 
 # Skip Oak's first-visit intro speech (ZERO-ONE / "I'll teach you...").
 func_800E467C_8A9E9C = exp_noop
+
+# Record per-species bonus types into the save when a photo is scored.
+call:func_800A0EA4+0x338 = exp_calcScore
+call:func_800A0EA4+0x534 = exp_calcScore
+
+# Persist the AP data block to/from a dedicated FLASH region alongside the save.
+call:func_800BF244_5C0E4+0xa0 = exp_saveMain
+call:func_800BF37C_5C21C+0x14 = exp_loadMain
+
+# Course-select text: index the full course list so all shown courses resolve text.
+call:func_800E3404_8A8C24+0x30c = exp_rank6

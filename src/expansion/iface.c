@@ -1,4 +1,5 @@
 #include "common.h"
+#include "apdata.h"
 
 // External-client interface block. Pinned by the linker at the very start of
 // the expansion segment (0x80400000) so the addresses are a stable ABI for an
@@ -18,3 +19,7 @@ s32 gCanUseOverride = 1;
 u32 gCanUseMask = 0;
 s32 gCourseOverride = 1;
 u32 gCourseUnlockMask = 0;
+
+// AP data block, pinned right after the scalar interface (magic initializer
+// forces .data placement so the client address is stable: scores at 0x80400020).
+ApData gApData = { AP_MAGIC };
