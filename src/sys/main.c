@@ -69,21 +69,10 @@ s32 func_80000478(void) {
     return 0x1000;
 }
 
-void check_sp_imem(void) {
-    if (IO_READ(SP_IMEM_START) == 6103) {
-        gSPImemOkay = true;
-    } else {
-        gSPImemOkay = false;
-    }
-}
+void check_sp_imem(void);
+void check_sp_dmem(void);
 
-void check_sp_dmem(void) {
-    if (IO_READ(SP_DMEM_START) == (u32) -1) {
-        gSPDmemOkay = true;
-    } else {
-        gSPDmemOkay = false;
-    }
-}
+#pragma GLOBAL_ASM("src/expansion/bootstrap.s")
 
 void fatal_stack_overflow_thread(s32 tid) {
     error_printf("thread stack overflow  id = %d\n", tid);

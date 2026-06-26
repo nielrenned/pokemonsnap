@@ -1,0 +1,19 @@
+# target_function = expansion_replacement
+# Redirects target's entry to the replacement via `j; nop` (size-neutral).
+
+# gMaxFilm: cap displayed film count
+func_8035E508_4FE918 = exp_filmGetRemaining
+func_8035E52C_4FE93C = exp_filmUpdateCounter
+
+# Independent per-item use, gated on canUse flags
+handleItemButtonsPress = exp_handleItemButtonsPress
+
+# Icon display follows canUse per-item
+Icons_Init = exp_Icons_Init
+
+# Independent awards + flute requires rank 5 (detour into the award block)
+func_801E2ED4_992944+0x4a8 = exp_awardDetour
+
+# Dash engine availability (icon + boost) follows canUse, via the ProgressFlags
+# build in initUI; retarget only that one checkPlayerFlag call.
+call:initUI+0xe4 = exp_dashAvailable

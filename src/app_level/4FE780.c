@@ -1,7 +1,5 @@
 #include "common.h"
 
-s32 gMaxFilm = 60;
-
 extern Sprite D_80388E00_529210;
 extern UNK_TYPE D_80388F58_529368;
 extern Sprite D_80388F60_529370;
@@ -63,12 +61,12 @@ void func_8035E4D0_4FE8E0(void) {
 }
 
 s32 func_8035E508_4FE918(void) {
-    return gMaxFilm - func_8009BC68();
+    return 60 - func_8009BC68();
 }
 
 s32 func_8035E52C_4FE93C(void) {
     s32 ones, tens, hundreds;
-    s32 value = gMaxFilm - func_8009BC68();
+    s32 value = 60 - func_8009BC68();
 
     ones = value % 10;
     tens = (value % 100) / 10;

@@ -55,7 +55,11 @@ typedef struct UnkBigBoy {
         /* ----- */ u32 unk_68_29 : 1;
         /* ----- */ u32 unk_68_28 : 1;
         /* ----- */ u32 unk_68_27 : 1;
-        /* ----- */ u32 unk_68_26 : 27;
+        /* ----- */ u32 canUseApple : 1;
+        /* ----- */ u32 canUsePesterBall : 1;
+        /* ----- */ u32 canUseFlute : 1;
+        /* ----- */ u32 canUseDashEngine : 1;
+        /* ----- */ u32 unk_68_22 : 23;
         /* 0x06C */ s32 unk_6C[69];
         /* 0x180 */ PhotoData unk_180[69];
         /* 0xFBA0 */ PhotoData unk_FBA0[4];

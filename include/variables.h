@@ -8,7 +8,6 @@
 extern OSThread* __osRunningThread;
 extern OSThread* __osRunQueue;
 extern s32 gPhotoCount;
-extern s32 gMaxFilm;
 
 extern s8 sControllerIndices[MAXCONTROLLERS];
 

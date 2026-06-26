@@ -26,6 +26,8 @@ BASENAME = "pokemonsnap"
 LD_PATH = f"{BASENAME}.ld"
 MAP_PATH = f"build/{BASENAME}.map"
 ELF_PATH = f"build/{BASENAME}.elf"
+HOOKED_ELF_PATH = f"build/{BASENAME}.hooked.elf"
+HOOKS_PATH = "src/expansion/hooks.txt"
 Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
 PATCH_PATH = f"build/{BASENAME}.bsdiff"
@@ -189,6 +191,53 @@ NULL = "int"
         )
 
 
+EXPANSION_OBJ = Path("build/src/expansion/expansion.c.o")
+EXPANSION_SRC = ROOT / "src/expansion/expansion.c"
+EXPANSION_VRAM = 0x80400000
+
+
+def add_expansion_segment_to_linker():
+    with open(LD_PATH) as f:
+        ld = f.read()
+
+    if "expansion_ROM_START" in ld:
+        return
+
+    block = f"""    expansion_ROM_START = __romPos;
+    .expansion {EXPANSION_VRAM:#x} : AT(expansion_ROM_START) SUBALIGN(16)
+    {{
+        FILL(0x00000000);
+        expansion_TEXT_START = .;
+        {EXPANSION_OBJ}(.text);
+        . = ALIGN(., 16);
+        expansion_TEXT_END = .;
+        expansion_DATA_START = .;
+        {EXPANSION_OBJ}(.data);
+        {EXPANSION_OBJ}(.rodata);
+        . = ALIGN(., 16);
+        expansion_DATA_END = .;
+    }}
+    expansion_VRAM = ADDR(.expansion);
+    __romPos += SIZEOF(.expansion);
+    expansion_ROM_END = __romPos;
+    expansion_VRAM_END = .;
+
+    .expansion_bss (NOLOAD) : SUBALIGN(16)
+    {{
+        expansion_BSS_START = .;
+        {EXPANSION_OBJ}(.bss);
+        . = ALIGN(., 16);
+        expansion_BSS_END = .;
+    }}
+
+"""
+
+    ld = ld.replace("    /DISCARD/ :", block + "    /DISCARD/ :", 1)
+
+    with open(LD_PATH, "w") as f:
+        f.write(ld)
+
+
 def create_build_script(linker_entries: List[LinkerEntry]):
     built_objects: Set[Path] = set()
     img_incs = []
@@ -279,9 +328,15 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.rule(
+        "hooks",
+        description="hooks $out",
+        command=f"{sys.executable} tools/apply_hooks.py $in {HOOKS_PATH} $out",
+    )
+
+    ninja.rule(
         "z64",
         description="rom $out",
-        command=f"{CROSS_OBJCOPY} $in $out -O binary",
+        command=f"{CROSS_OBJCOPY} $in $out -O binary && {sys.executable} tools/n64crc.py $out 6103",
     )
 
     ninja.rule(
@@ -556,6 +611,9 @@ def create_build_script(linker_entries: List[LinkerEntry]):
             print(f"ERROR: Unsupported build segment type {seg.type}")
             sys.exit(1)
 
+    # Expansion segment (not managed by splat): compile and feed into the link
+    build(EXPANSION_OBJ, [EXPANSION_SRC], "cc", variables={"flags": "-O2"})
+
     ninja.build(
         ELF_PATH,
         "ld",
@@ -565,9 +623,17 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.build(
+        HOOKED_ELF_PATH,
+        "hooks",
+        ELF_PATH,
+        implicit=["tools/apply_hooks.py", HOOKS_PATH],
+    )
+
+    ninja.build(
         Z64_PATH,
         "z64",
-        ELF_PATH,
+        HOOKED_ELF_PATH,
+        implicit=["tools/n64crc.py"],
     )
 
     ninja.build(
@@ -654,6 +720,8 @@ if __name__ == "__main__":
     )
 
     linker_entries = split.linker_writer.entries
+
+    add_expansion_segment_to_linker()
 
     # graph_segments()
 
