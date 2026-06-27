@@ -22,10 +22,20 @@ def get_symbols(elf):
     return syms
 
 
+EXPANSION_VRAM = 0x80400000
+
+
 def main():
     in_elf, out_json = sys.argv[1], sys.argv[2]
     s = get_symbols(in_elf)
     ap = s["gApData"]
+
+    # ROM file offset of an expansion symbol (the .expansion LMA starts the
+    # blob at EXPANSION_VRAM), so the patcher can write into the ROM image.
+    exp_rom_start = s["expansion_ROM_START"]
+
+    def rom_off(vaddr):
+        return exp_rom_start + (vaddr - EXPANSION_VRAM)
 
     # Main save struct: D_800C21B0_5F050 = (&D_800C21B8_5F058 + 0xF) & ~0xF.
     save_base = (s["D_800C21B8_5F058"] + 0xF) & ~0xF
@@ -57,6 +67,12 @@ def main():
                           "[slot][0=special,1=pose,2=size,3=technique,4=samePkmn]; slot=func_8009BB4C(pokemonID)"),
     }
 
+    # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.
+    idents = {
+        "auth": (s["gApAuth"], rom_off(s["gApAuth"]), 16, "u8[16]",
+                 "per-seed auth token; client connects with base64(token)"),
+    }
+
     data = {
         "meta": {
             "endian": "big",
@@ -66,6 +82,11 @@ def main():
         "symbols": {
             name: {"addr": "0x%08X" % addr, "type": t, "access": acc, "desc": desc}
             for name, (addr, t, acc, desc) in symbols.items()
+        },
+        "idents": {
+            name: {"addr": "0x%08X" % addr, "rom_offset": "0x%08X" % off,
+                   "len": ln, "type": t, "access": "rw", "desc": desc}
+            for name, (addr, off, ln, t, desc) in idents.items()
         },
         "save": {
             name: {"addr": "0x%08X" % addr, "type": t, "access": acc, "desc": desc}

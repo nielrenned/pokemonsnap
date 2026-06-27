@@ -23,6 +23,12 @@ call:initUI+0xe4 = exp_dashAvailable
 call:func_800E3404_8A8C24+0xbc = exp_CreateCourseButtons
 call:func_800E3404_8A8C24+0x108 = exp_CreateCourseButtons
 
+# Map the initial cursor (a level number) to its index in the compacted list.
+call:func_800E3404_8A8C24+0x114 = exp_courseCursorInit
+
+# Same mapping for the course-confirmation focus loop.
+call:func_800E3ED4_8A96F4+0x500 = exp_courseConfirmFocus
+
 # Remove the in-course tutorial: force the initUI Pokedex-count check to report
 # the tutorial as finished (sets the flag + returns >=4 so IsTutorialEnabled=0).
 call:initUI+0x174 = exp_tutorialDone

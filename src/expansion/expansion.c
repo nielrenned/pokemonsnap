@@ -286,21 +286,20 @@ void exp_Icons_Init(void) {
 
 extern s32 D_801F3E28_9A3898;
 extern s32 func_800BFC5C_5CAFC(void);
-extern void func_800C0314_5D1B4(s32, s32);
 
-// Independent item awards + flute requires rank 5 (was dash engine).
-// Each tier checks "don't already have it" in its own condition, so owning a
-// higher-tier item falls through to lower tiers instead of locking them out.
+// Rank-up awards set the "unlocked" flags only; actual item usability is driven
+// by the AP canUse mask. Each tier checks its own flag so a higher-tier item
+// doesn't lock out the lower tiers.
 void exp_awardItems(s32 score) {
     if (score >= 130000 && func_800BFC5C_5CAFC() >= 5 && checkPlayerFlag(PFID_HAS_FLUTE) == 0) {
         D_801F3E28_9A3898 = 0x200;
-        func_800C0314_5D1B4(2, 1);
+        setPlayerFlag(PFID_HAS_FLUTE, 1);
     } else if (score >= 72500 && func_800BFC5C_5CAFC() >= 3 && checkPlayerFlag(PFID_HAS_PESTER_BALL) == 0) {
         D_801F3E28_9A3898 = 0x100;
-        func_800C0314_5D1B4(1, 1);
+        setPlayerFlag(PFID_HAS_PESTER_BALL, 1);
     } else if (score >= 24000 && func_800BFC5C_5CAFC() > 0 && checkPlayerFlag(PFID_HAS_APPLE) == 0) {
         D_801F3E28_9A3898 = 0x80;
-        func_800C0314_5D1B4(0, 1);
+        setPlayerFlag(PFID_HAS_APPLE, 1);
     }
 }
 
@@ -334,6 +333,14 @@ static s32 exp_courseUnlocked(s32 level) {
 void exp_CreateCourseButtons(UIButton* rankList) {
     UIButton* src = D_80195CEC_95B50C[6];
     s32 n = 0;
+    s32 i;
+
+    // Clear every slot: the cursor navigation indexes this array mod 8 and only
+    // skips BUTTON_NONE, so stale entries past the list would be navigable.
+    for (i = 0; i < 12; i++) {
+        sCourseButtons[i].id = 35 /* BUTTON_NONE */;
+        sCourseButtons[i].text = NULL;
+    }
 
     while (src->id != 35 /* BUTTON_NONE */) {
         s32 keep = 1;
@@ -346,9 +353,40 @@ void exp_CreateCourseButtons(UIButton* rankList) {
         }
         src++;
     }
-    sCourseButtons[n].id = 35 /* BUTTON_NONE */;
-    sCourseButtons[n].text = NULL;
     UILayout_CreateButtons(sCourseButtons);
+}
+
+extern s32 func_800E3264_8A8A84(void*, s32*);
+
+// The course-select menu seeds/stores the cursor as a level number, but the
+// filtered list is compacted, so level != list index. Map a level to its index
+// in the compacted list (0 if that course isn't present).
+static s32 exp_levelToIndex(s32 level) {
+    s32 targetId = level + 6;
+    s32 i;
+    for (i = 0; sCourseButtons[i].id != 35 /* BUTTON_NONE */; i++) {
+        if (sCourseButtons[i].id == targetId) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+// Wraps the initial cursor placement: convert the seeded level to its index.
+void exp_courseCursorInit(void* arg0, s32* cursor) {
+    *cursor = exp_levelToIndex(*cursor);
+    func_800E3264_8A8A84(arg0, cursor);
+}
+
+// Wraps the focus update in the course-confirmation loop, which drives the
+// cursor straight from the stored level. Navigate by compacted index, then sync
+// the level back so the confirmed/returned course stays correct.
+void exp_courseConfirmFocus(void* input, s32* level) {
+    s32 idx = exp_levelToIndex(*level);
+    func_800E3264_8A8A84(input, &idx);
+    if (sCourseButtons[idx].id >= 6 && sCourseButtons[idx].id <= 12) {
+        *level = sCourseButtons[idx].id - 6;
+    }
 }
 
 // Wraps score_CalculateScore at its call sites: after the real scoring, record

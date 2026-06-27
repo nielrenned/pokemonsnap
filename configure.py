@@ -32,6 +32,8 @@ Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
 PATCH_PATH = f"build/{BASENAME}.bsdiff"
 SYMBOLS_JSON = f"build/{BASENAME}.symbols.json"
+APWORLD_CONFIG = ".apworld_path"
+APWORLD_STAMP = "build/apworld.stamp"
 
 COMMON_INCLUDES = "-I include -I src -I ultralib/include -I ultralib/include/ido -I ultralib/include/PR -I ultralib/src -I build/include -I build -I ."
 IDO_DEFS = "-DF3DEX_GBI_2 -D_LANGUAGE_C -DNDEBUG -D_FINALROM"
@@ -359,6 +361,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.rule(
+        "sync_apworld",
+        description="sync apworld $out",
+        command=f"{sys.executable} tools/sync_apworld.py {APWORLD_CONFIG} {SYMBOLS_JSON} {PATCH_PATH} $out",
+    )
+
+    ninja.rule(
         "pigment",
         description="img($img_type) $in",
         command=f"{PIGMENT64} to-bin $img_flags -f $img_type -o $out $in",
@@ -662,6 +670,14 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         "symbols",
         ELF_PATH,
         implicit=["tools/export_symbols.py"],
+    )
+
+    ninja.build("always_sync", "phony")
+    ninja.build(
+        APWORLD_STAMP,
+        "sync_apworld",
+        [SYMBOLS_JSON, PATCH_PATH],
+        implicit=["tools/sync_apworld.py", "always_sync"],
     )
 
     ninja.build("img_incs", "phony", img_incs)

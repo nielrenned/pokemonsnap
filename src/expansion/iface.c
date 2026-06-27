@@ -23,3 +23,7 @@ u32 gCourseUnlockMask = 0;
 // AP data block, pinned right after the scalar interface (magic initializer
 // forces .data placement so the client address is stable: scores at 0x80400020).
 ApData gApData = { AP_MAGIC };
+
+// Per-seed auth token patched in by the apworld; the client reads it (base64)
+// as its connect name. Non-zero init keeps it in .data; sentinel = unpatched.
+u8 gApAuth[16] = "PSAP-UNPATCHED!!";
