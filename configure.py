@@ -31,6 +31,7 @@ HOOKS_PATH = "src/expansion/hooks.txt"
 Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
 PATCH_PATH = f"build/{BASENAME}.bsdiff"
+SYMBOLS_JSON = f"build/{BASENAME}.symbols.json"
 
 COMMON_INCLUDES = "-I include -I src -I ultralib/include -I ultralib/include/ido -I ultralib/include/PR -I ultralib/src -I build/include -I build -I ."
 IDO_DEFS = "-DF3DEX_GBI_2 -D_LANGUAGE_C -DNDEBUG -D_FINALROM"
@@ -352,6 +353,12 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.rule(
+        "symbols",
+        description="symbols $out",
+        command=f"{sys.executable} tools/export_symbols.py $in $out",
+    )
+
+    ninja.rule(
         "pigment",
         description="img($img_type) $in",
         command=f"{PIGMENT64} to-bin $img_flags -f $img_type -o $out $in",
@@ -648,6 +655,13 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         "bsdiff",
         Z64_PATH,
         implicit=[f"{BASENAME}.z64", "tools/make_bsdiff.py"],
+    )
+
+    ninja.build(
+        SYMBOLS_JSON,
+        "symbols",
+        ELF_PATH,
+        implicit=["tools/export_symbols.py"],
     )
 
     ninja.build("img_incs", "phony", img_incs)
