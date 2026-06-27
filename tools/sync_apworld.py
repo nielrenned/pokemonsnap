@@ -33,9 +33,9 @@ def main() -> None:
         print(f"sync_apworld: apworld dir not found: {apworld}", file=sys.stderr)
         sys.exit(1)
     else:
-        shutil.copyfile(symbols_json, os.path.join(apworld, os.path.basename(symbols_json)))
         data_dir = os.path.join(apworld, "data")
         os.makedirs(data_dir, exist_ok=True)
+        shutil.copyfile(symbols_json, os.path.join(data_dir, os.path.basename(symbols_json)))
         shutil.copyfile(bsdiff, os.path.join(data_dir, "basepatch.bsdiff4"))
         print(f"sync_apworld: copied symbols + basepatch into {apworld}")
 
