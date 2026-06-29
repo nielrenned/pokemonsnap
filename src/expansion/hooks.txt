@@ -46,3 +46,30 @@ call:func_800BF37C_5C21C+0x14 = exp_loadMain
 
 # Course-select text: index the full course list so all shown courses resolve text.
 call:func_800E3404_8A8C24+0x30c = exp_rank6
+
+# Skip Oak's "you'll find out the next course in N more photos" textbox after a
+# report (ranks 4/2/0) — courses come from AP items, so the hint is meaningless.
+# The three branch text prints flag the box; the shared wait honours the flag.
+call:func_801E2ED4_992944+0x830 = exp_skipOakBox
+call:func_801E2ED4_992944+0x950 = exp_skipOakBox
+call:func_801E2ED4_992944+0xa2c = exp_skipOakBox
+call:func_801E2ED4_992944+0xa3c = exp_oakReportWait
+
+# Sign subjects (the 6 PKMN Signs / internal-ID>151 photo subjects) gate photo
+# recognition, selection and reporting on the raw PFID_HAS_DASH_ENGINE save flag,
+# which the AP build never sets (the dash is an AP item driving canUse). Retarget
+# those checks to follow the canUse dash signal, like the dash icon/boost do.
+# score.c sign scoring (6 cases):
+call:func_800A0EA4+0xd0 = exp_dashAvailable
+call:func_800A0EA4+0xfc = exp_dashAvailable
+call:func_800A0EA4+0x128 = exp_dashAvailable
+call:func_800A0EA4+0x154 = exp_dashAvailable
+call:func_800A0EA4+0x180 = exp_dashAvailable
+call:func_800A0EA4+0x1ac = exp_dashAvailable
+# camera_check recognition / selectability / "showable" checks:
+call:func_camera_check_801E0118+0xc = exp_dashAvailable
+call:func_camera_check_801E2EF4+0x38 = exp_dashAvailable
+call:func_camera_check_801E2F58+0x8c = exp_dashAvailable
+call:func_camera_check_801E30CC+0x48 = exp_dashAvailable
+call:func_camera_check_801E3140+0x20 = exp_dashAvailable
+call:func_camera_check_801E31E4+0xb0 = exp_dashAvailable

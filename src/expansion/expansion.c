@@ -303,6 +303,28 @@ void exp_awardItems(s32 score) {
     }
 }
 
+extern s32 func_80374F30_8486E0(void* elem, s32 flag);
+
+static s32 sSkipOakReportBox = 0;
+
+// The report eval shows a second Oak textbox telling the player how many more
+// photos until the next course unlocks (ranks 4/2/0). Courses are AP items now,
+// so that hint is meaningless: redirect those three text prints here to flag the
+// box for skipping (and print nothing, avoiding a one-frame flash of the text).
+void exp_skipOakBox(void) {
+    sSkipOakReportBox = 1;
+}
+
+// Wraps the shared textbox wait at the end of the report eval: skip it (no box,
+// no input wait) when the selected message was a suppressed next-course hint.
+s32 exp_oakReportWait(void* elem, s32 flag) {
+    if (sSkipOakReportBox) {
+        sSkipOakReportBox = 0;
+        return 0;
+    }
+    return func_80374F30_8486E0(elem, flag);
+}
+
 #pragma GLOBAL_ASM("src/expansion/award_detour.s")
 
 extern UIButton* D_80195CEC_95B50C[];
