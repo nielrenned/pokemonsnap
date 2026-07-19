@@ -18,6 +18,7 @@ options:
   data_string_guesser_level: 2
   rodata_string_guesser_level: 3
   create_undefined_funcs_auto: false
+  create_undefined_syms_auto: false
   subalign: 16
 segments:
   - [0x000000, header, header]

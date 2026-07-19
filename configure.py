@@ -26,8 +26,14 @@ BASENAME = "pokemonsnap"
 LD_PATH = f"{BASENAME}.ld"
 MAP_PATH = f"build/{BASENAME}.map"
 ELF_PATH = f"build/{BASENAME}.elf"
+HOOKED_ELF_PATH = f"build/{BASENAME}.hooked.elf"
+HOOKS_PATH = "src/expansion/hooks.txt"
 Z64_PATH = f"build/{BASENAME}.z64"
 OK_PATH = f"build/{BASENAME}.ok"
+PATCH_PATH = f"build/{BASENAME}.bsdiff"
+SYMBOLS_JSON = f"build/{BASENAME}.symbols.json"
+APWORLD_CONFIG = ".apworld_path"
+APWORLD_STAMP = "build/apworld.stamp"
 
 COMMON_INCLUDES = "-I include -I src -I ultralib/include -I ultralib/include/ido -I ultralib/include/PR -I ultralib/src -I build/include -I build -I ."
 IDO_DEFS = "-DF3DEX_GBI_2 -D_LANGUAGE_C -DNDEBUG -D_FINALROM"
@@ -188,6 +194,59 @@ NULL = "int"
         )
 
 
+EXPANSION_OBJ = Path("build/src/expansion/expansion.c.o")
+EXPANSION_SRC = ROOT / "src/expansion/expansion.c"
+IFACE_OBJ = Path("build/src/expansion/iface.c.o")
+IFACE_SRC = ROOT / "src/expansion/iface.c"
+EXPANSION_VRAM = 0x80400000
+
+
+def add_expansion_segment_to_linker():
+    with open(LD_PATH) as f:
+        ld = f.read()
+
+    if "expansion_ROM_START" in ld:
+        return
+
+    block = f"""    expansion_ROM_START = __romPos;
+    .expansion {EXPANSION_VRAM:#x} : AT(expansion_ROM_START) SUBALIGN(16)
+    {{
+        FILL(0x00000000);
+        {IFACE_OBJ}(.data);
+        . = ALIGN(., 16);
+        expansion_TEXT_START = .;
+        {EXPANSION_OBJ}(.text);
+        . = ALIGN(., 16);
+        expansion_TEXT_END = .;
+        expansion_DATA_START = .;
+        {EXPANSION_OBJ}(.data);
+        {EXPANSION_OBJ}(.rodata);
+        {IFACE_OBJ}(.rodata);
+        . = ALIGN(., 16);
+        expansion_DATA_END = .;
+    }}
+    expansion_VRAM = ADDR(.expansion);
+    __romPos += SIZEOF(.expansion);
+    expansion_ROM_END = __romPos;
+    expansion_VRAM_END = .;
+
+    .expansion_bss (NOLOAD) : SUBALIGN(16)
+    {{
+        expansion_BSS_START = .;
+        {EXPANSION_OBJ}(.bss);
+        {IFACE_OBJ}(.bss);
+        . = ALIGN(., 16);
+        expansion_BSS_END = .;
+    }}
+
+"""
+
+    ld = ld.replace("    /DISCARD/ :", block + "    /DISCARD/ :", 1)
+
+    with open(LD_PATH, "w") as f:
+        f.write(ld)
+
+
 def create_build_script(linker_entries: List[LinkerEntry]):
     built_objects: Set[Path] = set()
     img_incs = []
@@ -278,9 +337,33 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.rule(
+        "hooks",
+        description="hooks $out",
+        command=f"{sys.executable} tools/apply_hooks.py $in {HOOKS_PATH} $out",
+    )
+
+    ninja.rule(
         "z64",
         description="rom $out",
-        command=f"{CROSS_OBJCOPY} $in $out -O binary",
+        command=f"{CROSS_OBJCOPY} $in $out -O binary && {sys.executable} tools/n64crc.py $out 6103",
+    )
+
+    ninja.rule(
+        "bsdiff",
+        description="bsdiff $out",
+        command=f"{sys.executable} tools/make_bsdiff.py {BASENAME}.z64 $in $out",
+    )
+
+    ninja.rule(
+        "symbols",
+        description="symbols $out",
+        command=f"{sys.executable} tools/export_symbols.py $in $out",
+    )
+
+    ninja.rule(
+        "sync_apworld",
+        description="sync apworld $out",
+        command=f"{sys.executable} tools/sync_apworld.py {APWORLD_CONFIG} {SYMBOLS_JSON} {PATCH_PATH} $out",
     )
 
     ninja.rule(
@@ -549,6 +632,10 @@ def create_build_script(linker_entries: List[LinkerEntry]):
             print(f"ERROR: Unsupported build segment type {seg.type}")
             sys.exit(1)
 
+    # Expansion segment (not managed by splat): compile and feed into the link
+    build(IFACE_OBJ, [IFACE_SRC], "cc", variables={"flags": "-O2"})
+    build(EXPANSION_OBJ, [EXPANSION_SRC], "cc", variables={"flags": "-O2"})
+
     ninja.build(
         ELF_PATH,
         "ld",
@@ -558,16 +645,39 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     )
 
     ninja.build(
-        Z64_PATH,
-        "z64",
+        HOOKED_ELF_PATH,
+        "hooks",
         ELF_PATH,
+        implicit=["tools/apply_hooks.py", HOOKS_PATH],
     )
 
     ninja.build(
-        OK_PATH,
-        "sha1sum",
-        "checksum.sha1",
-        implicit=[Z64_PATH],
+        Z64_PATH,
+        "z64",
+        HOOKED_ELF_PATH,
+        implicit=["tools/n64crc.py"],
+    )
+
+    ninja.build(
+        PATCH_PATH,
+        "bsdiff",
+        Z64_PATH,
+        implicit=[f"{BASENAME}.z64", "tools/make_bsdiff.py"],
+    )
+
+    ninja.build(
+        SYMBOLS_JSON,
+        "symbols",
+        ELF_PATH,
+        implicit=["tools/export_symbols.py"],
+    )
+
+    ninja.build("always_sync", "phony")
+    ninja.build(
+        APWORLD_STAMP,
+        "sync_apworld",
+        [SYMBOLS_JSON, PATCH_PATH],
+        implicit=["tools/sync_apworld.py", "always_sync"],
     )
 
     ninja.build("img_incs", "phony", img_incs)
@@ -647,6 +757,8 @@ if __name__ == "__main__":
     )
 
     linker_entries = split.linker_writer.entries
+
+    add_expansion_segment_to_linker()
 
     # graph_segments()
 
