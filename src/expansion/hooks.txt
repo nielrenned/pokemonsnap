@@ -37,8 +37,7 @@ call:initUI+0x174 = exp_tutorialDone
 func_800E467C_8A9E9C = exp_noop
 
 # Record per-species bonus types into the save when a photo is scored.
-call:func_800A0EA4+0x338 = exp_calcScore
-call:func_800A0EA4+0x534 = exp_calcScore
+call:func_801E1FA8_991A18+0x348 = exp_registerPhoto
 
 # Persist the AP data block to/from a dedicated FLASH region alongside the save.
 call:func_800BF244_5C0E4+0xa0 = exp_saveMain

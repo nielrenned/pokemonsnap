@@ -7,6 +7,7 @@
 #include "apdata.h"
 
 extern UnkBigBoy* D_800C21B0_5F050;
+extern s32 photocheck_oaksMark(Photo* photo); // The photo scoring UI routine
 extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
 extern s32 func_8009BB4C(s32);
 extern OSMesgQueue D_800E17A8_7E648; // flash message queue
@@ -427,7 +428,7 @@ static u32 exp_apChecksum(void) {
     return sum;
 }
 
-// Read the AP block from FLASH (page-aligned, no overrun since sizeof is 0x300).
+// Read the AP block from FLASH (page-aligned, no overrun since sizeof is 0x380).
 static void exp_apFlashRead(void) {
     OSIoMesg mb;
     u8* ram = (u8*) &gApData;
@@ -497,29 +498,54 @@ s32 exp_loadMain(uintptr_t addr, s32 size) {
     return 0;
 }
 
-// Wraps score_CalculateScore: after scoring, record each species' best bonus
-// values into the AP block. Indices: 0=special,1=pose,2=size,3=technique,4=samePkmn.
-void exp_calcScore(ScoreData* score, PhotoData* photo, s32 id) {
-    s32 slot = func_8009BB4C(photo->pokemons[id].pokemonID);
+s16 max(s16 a, s16 b) {
+    return (a > b ? a : b);
+}
 
-    score_CalculateScore(score, photo, id);
+// Wraps photocheck_oaksMark: after the photo scoring UI runs, 
+// we record each species' best bonus values into the AP block.
+//   Index 0: Special Score (e.g. 1000 for Surfing Pikachu)
+//   Index 1: Pose Score
+//   Index 2: Size Score
+//   Index 3: Technique Score (0 = Normal, 1 = Wonderful)
+//   Index 4: Same Pokemon Score
+//   Index 5: Bit field containing special pose IDs
+//     Special Pose IDs range from 1 to 12 (inclusive)  
+//     and are mapped to bits 0 to 11 of index 5
+//       1: Surfing Pikachu      7: Gust-Using Pidgey
+//       2: Pikachu on a Ball    8: Jigglypuff on Stage
+//       3: Balloon Pikachu      9: Graveler's Group Dance
+//       4: Speed Pikachu       10: Rare Pokemon Mew
+//       5: Pikachu on a Stump  11: Fighting Magmar
+//       6: Flying Pikachu      12: Jigglypuff Trio on Stage
+s32 exp_registerPhoto(Photo* photo) {
+    // Run the UI first so that we don't spoil the results
+    s32 ret = photocheck_oaksMark(photo);
 
-    if (slot >= 0 && slot < (s32) ARRAY_COUNT(gApData.speciesScores)) {
-        u16* v = gApData.speciesScores[slot];
-        if (score->specialBonus > v[0]) {
-            v[0] = score->specialBonus;
-        }
-        if (score->posePts > v[1]) {
-            v[1] = score->posePts;
-        }
-        if (score->proximityScore > v[2]) {
-            v[2] = score->proximityScore;
-        }
-        if (score->completenessScore > v[3]) {
-            v[3] = score->completenessScore;
-        }
-        if (score->samePkmnBonus > v[4]) {
-            v[4] = score->samePkmnBonus;
+    s32 isPokemonSign = !(photo->pkmnID < PokemonID_SIGN_KINGLER_ROCK);
+    s32 slot = func_8009BB4C(photo->pkmnID);
+
+    if (0 <= slot && slot < (s32) ARRAY_COUNT(gApData.speciesScores)) {
+        s16* score = gApData.speciesScores[slot];
+
+        if (isPokemonSign) {
+            // Pokemon Signs are in slots 63 - 68, in course order, i.e.
+            //   Kingler Rock, Pinsir Shadow, Koffing Smoke,
+            //   Cubone Tree, Mewtwo Constellation, Dugtrio Mountain
+            // Sign photos are not scored, so we'll just set every nibble = 1.
+            score[0] = score[1] = score[2] = score[3] = score[4] = score[5] = 0x1111;
+        } else {
+            score[0] = max(score[0], photo->specialBonus);
+            score[1] = max(score[1], photo->posePts);
+            score[2] = max(score[2], photo->proximityScore);
+            score[3] = max(score[3], photo->isWellFramed);
+            score[4] = max(score[4], photo->samePkmnBonus);
+            
+            if (photo->specialID > 0) {
+                score[5] |= (1 << (photo->specialID - 1));
+            }
         }
     }
+
+    return ret;
 }

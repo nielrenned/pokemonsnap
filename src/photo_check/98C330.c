@@ -846,7 +846,7 @@ void func_801DE02C_98DA9C(GObj* arg0) {
     ohWait(0x63);
 }
 
-s32 func_801DE204_98DC74(Photo* photo) {
+s32 photocheck_oaksMark(Photo* photo) {
     Unk803A6C18* sp25C;
     UIElement* sp258;
     UIElement* sp254;
@@ -1894,7 +1894,7 @@ s32 func_801E1FA8_991A18(Photo* arg0, s32 arg1, s32 arg2) {
             UIText_SetPrintDelay(2);
             func_8036EB80_842330(1);
             sp40 = true;
-            i = func_801DE204_98DC74(arg0);
+            i = photocheck_oaksMark(arg0);
             if (D_801F3E2C_9A389C == 1) {
                 i = 10;
 
