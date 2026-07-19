@@ -522,7 +522,7 @@ s32 exp_registerPhoto(Photo* photo) {
     // Run the UI first so that we don't spoil the results
     s32 ret = photocheck_oaksMark(photo);
 
-    s32 isPokemonSign = !(photo->pkmnID < PokemonID_SIGN_KINGLER_ROCK);
+    s32 isPokemonSign = !(photo->pkmnID < PokemonID_1004);
     s32 slot = func_8009BB4C(photo->pkmnID);
 
     if (0 <= slot && slot < (s32) ARRAY_COUNT(gApData.speciesScores)) {
