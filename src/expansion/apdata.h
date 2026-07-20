@@ -14,7 +14,7 @@ struct ApData_s {
 
 // AP data block, stored in expansion RAM (pinned in iface.c) and persisted to a
 // dedicated FLASH region after the main save (see expansion.c). Page-aligned
-// (0x400 = 8 flash pages) so flash read/write never overruns the buffer.
+// to 0x80-sized pages so flash read/write never overruns the buffer.
 typedef union {
     struct ApData_s;
     u8 padding[0x480];
