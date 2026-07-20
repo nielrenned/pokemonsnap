@@ -544,11 +544,10 @@ s32 exp_registerPhoto(Photo* photo) {
             // Pokemon Signs are in slots 63 - 68, in course order, i.e.
             //   Kingler Rock, Pinsir Shadow, Koffing Smoke,
             //   Cubone Tree, Mewtwo Constellation, Dugtrio Mountain
-            // Sign photos are not scored, so we'll just set every nibble = 1.
-            int i;
-            for (i = 0; i < 8; i++) {
-                score[i] = 0x1111;
-            }
+            // Sign photos are not scored, so we'll just set the score bytes and location.
+            score[0] = score[1] = score[2] = score[3] = score[4] = 0x1111;
+            score[6] = (1 << photo->unk_0->levelID);
+            score[5] = score[7] = 0;
         } else {
             score[0] = max(score[0], photo->specialBonus);
             score[1] = max(score[1], photo->posePts);
