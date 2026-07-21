@@ -63,8 +63,8 @@ def main():
                               "bit0=Beach,1=Tunnel,2=Volcano,3=Cave,4=River,5=Valley,6=Rainbow (used when gCourseOverride==0)"),
         "apMagic": (ap + 0x00, "u32", "r", "0x53414431 'SAD1' when the AP block is valid"),
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
-        "speciesScores": (ap + 0x08, "u16[69][6]", "r",
-                          "[slot][0=special,1=pose,2=size,3=technique,4=samePkmn,5=poseFlags]; slot=func_8009BB4C(pokemonID)"),
+        "speciesScores": (ap + 0x08, "u16[69][8]", "r",
+                          "[slot][0=special,1=pose,2=size,3=technique,4=samePkmn,5=poseFlags,6=levelFlags,7=unused]; slot=func_8009BB4C(pokemonID)"),
     }
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.

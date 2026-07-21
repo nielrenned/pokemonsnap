@@ -428,7 +428,7 @@ static u32 exp_apChecksum(void) {
     return sum;
 }
 
-// Read the AP block from FLASH (page-aligned, no overrun since sizeof is 0x380).
+// Read the AP block from FLASH (page-aligned, no overrun since sizeof is a multiple of 0x80).
 static void exp_apFlashRead(void) {
     OSIoMesg mb;
     u8* ram = (u8*) &gApData;
@@ -518,6 +518,18 @@ s16 max(s16 a, s16 b) {
 //       4: Speed Pikachu       10: Rare Pokemon Mew
 //       5: Pikachu on a Stump  11: Fighting Magmar
 //       6: Flying Pikachu      12: Jigglypuff Trio on Stage
+//   Index 6: Bit field containing level IDs of photos taken.
+//     Some Pokemon, e.g. Magikarp, can be photographed on more
+//     than one level. This bit field tracks photos taken, with the
+//     following index-level correspondence.
+//       0: Beach
+//       1: Tunnel
+//       2: Volcano
+//       3: River
+//       4: Cave
+//       5: Valley
+//       6: Rainbow Cloud
+//   Index 7: Unused. Having 8 values makes debugging easier.
 s32 exp_registerPhoto(Photo* photo) {
     // Run the UI first so that we don't spoil the results
     s32 ret = photocheck_oaksMark(photo);
@@ -532,8 +544,10 @@ s32 exp_registerPhoto(Photo* photo) {
             // Pokemon Signs are in slots 63 - 68, in course order, i.e.
             //   Kingler Rock, Pinsir Shadow, Koffing Smoke,
             //   Cubone Tree, Mewtwo Constellation, Dugtrio Mountain
-            // Sign photos are not scored, so we'll just set every nibble = 1.
-            score[0] = score[1] = score[2] = score[3] = score[4] = score[5] = 0x1111;
+            // Sign photos are not scored, so we'll just set the score bytes and location.
+            score[0] = score[1] = score[2] = score[3] = score[4] = 0x1111;
+            score[6] = (1 << photo->unk_0->levelID);
+            score[5] = score[7] = 0;
         } else {
             score[0] = max(score[0], photo->specialBonus);
             score[1] = max(score[1], photo->posePts);
@@ -544,6 +558,8 @@ s32 exp_registerPhoto(Photo* photo) {
             if (photo->specialID > 0) {
                 score[5] |= (1 << (photo->specialID - 1));
             }
+
+            score[6] |= (1 << photo->unk_0->levelID);
         }
     }
 
