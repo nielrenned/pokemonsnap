@@ -395,6 +395,22 @@ static s32 exp_levelToIndex(s32 level) {
     return 0;
 }
 
+extern void func_800E1FEC_8A780C(s32 stage);
+
+void exp_setLevelIcon(s32 index) {
+    s32 level = -1;
+    if ((0 <= index && index < 12) && 
+        (6 <= sCourseButtons[index].id && sCourseButtons[index].id <= 12)) 
+    {
+        // Then we're hovering over a course button, not a back button,
+        // so we can set the icon to match the course.
+        level = sCourseButtons[index].id - 6;
+    }
+
+    // Otherwise we'll set it to -1, which is interpreted as "no icon"
+    func_800E1FEC_8A780C(level);
+}
+
 // Wraps the initial cursor placement: convert the seeded level to its index.
 void exp_courseCursorInit(void* arg0, s32* cursor) {
     *cursor = exp_levelToIndex(*cursor);

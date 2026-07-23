@@ -18,6 +18,9 @@ func_801E2ED4_992944+0x4a8 = exp_awardDetour
 # build in initUI; retarget only that one checkPlayerFlag call.
 call:initUI+0xe4 = exp_dashAvailable
 
+# Hooks the function that picks the course bitmap to display based on the selected button
+call:func_800E3404_8A8C24+0x184 = exp_setLevelIcon
+
 # Course unlocks independent of rank: build the lab course-select button list
 # from per-course flags instead of the rank-indexed list.
 call:func_800E3404_8A8C24+0xbc = exp_CreateCourseButtons
