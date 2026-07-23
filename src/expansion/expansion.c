@@ -581,3 +581,14 @@ s32 exp_registerPhoto(Photo* photo) {
 
     return ret;
 }
+
+extern void (*EndLevelCb)(s32);
+extern void omEndProcess(GObjProcess* proc);
+
+void exp_secretExitTaken(GObj* obj) {
+    s32 levelID = getLevelId();
+    gApData.secretExits |= (1 << levelID);
+
+    EndLevelCb(END_LEVEL_REASON_SECRET_EXIT);
+    omEndProcess(NULL);
+}

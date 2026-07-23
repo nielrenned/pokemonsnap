@@ -39,6 +39,8 @@ call:initUI+0x174 = exp_tutorialDone
 # Skip Oak's first-visit intro speech (ZERO-ONE / "I'll teach you...").
 func_800E467C_8A9E9C = exp_noop
 
+func_80355D54_4F6164 = exp_secretExitTaken
+
 # Record per-species bonus types into the save when a photo is scored.
 call:func_801E1FA8_991A18+0x348 = exp_registerPhoto
 

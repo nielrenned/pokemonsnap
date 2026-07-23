@@ -2177,7 +2177,7 @@ void finishLevel(GObj* arg0) {
 }
 
 void func_80355D54_4F6164(GObj* obj) {
-    EndLevelCb(END_LEVEL_REASON_3);
+    EndLevelCb(END_LEVEL_REASON_SECRET_EXIT);
     omEndProcess(NULL);
 }
 
