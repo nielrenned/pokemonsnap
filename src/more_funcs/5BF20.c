@@ -638,6 +638,7 @@ s32 func_800C042C_5D2CC(void) {
     D_800E14FC_7E39C[1] = 0;
     D_800E14FC_7E39C[2] = 0;
     D_800E1500_7E3A0 = 0;
+    D_800C21B0_5F050->data.invertedY = 1; // Set the default camera movement to Normal
     D_800C21B0_5F050->data.unk_64_05 = 1;
     D_800C21B0_5F050->data.unk_64_22 = 0x4C;
     D_800C21B0_5F050->data.unk_64_16 = 0x24;
