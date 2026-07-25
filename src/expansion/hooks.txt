@@ -32,6 +32,12 @@ call:func_800E3404_8A8C24+0x114 = exp_courseCursorInit
 # Same mapping for the course-confirmation focus loop.
 call:func_800E3ED4_8A96F4+0x500 = exp_courseConfirmFocus
 
+# Hook the Oak's Lab Sign pic dialog check
+call:func_800E5298_8AAAB8+0x1f0 = exp_runSignPicDialog
+
+# Hook the function that run's the dialog upon return to oak's lab
+call:func_800E2C0C_8A842C+0x334 = exp_labPreDialogHook
+
 # Remove the in-course tutorial: force the initUI Pokedex-count check to report
 # the tutorial as finished (sets the flag + returns >=4 so IsTutorialEnabled=0).
 call:initUI+0x174 = exp_tutorialDone
@@ -62,16 +68,16 @@ call:func_801E2ED4_992944+0xa3c = exp_oakReportWait
 # which the AP build never sets (the dash is an AP item driving canUse). Retarget
 # those checks to follow the canUse dash signal, like the dash icon/boost do.
 # score.c sign scoring (6 cases):
-call:func_800A0EA4+0xd0 = exp_dashAvailable
-call:func_800A0EA4+0xfc = exp_dashAvailable
-call:func_800A0EA4+0x128 = exp_dashAvailable
-call:func_800A0EA4+0x154 = exp_dashAvailable
-call:func_800A0EA4+0x180 = exp_dashAvailable
-call:func_800A0EA4+0x1ac = exp_dashAvailable
+call:func_800A0EA4+0xd0 = exp_hasSignDetector
+call:func_800A0EA4+0xfc = exp_hasSignDetector
+call:func_800A0EA4+0x128 = exp_hasSignDetector
+call:func_800A0EA4+0x154 = exp_hasSignDetector
+call:func_800A0EA4+0x180 = exp_hasSignDetector
+call:func_800A0EA4+0x1ac = exp_hasSignDetector
 # camera_check recognition / selectability / "showable" checks:
-call:func_camera_check_801E0118+0xc = exp_dashAvailable
-call:func_camera_check_801E2EF4+0x38 = exp_dashAvailable
-call:func_camera_check_801E2F58+0x8c = exp_dashAvailable
-call:func_camera_check_801E30CC+0x48 = exp_dashAvailable
-call:func_camera_check_801E3140+0x20 = exp_dashAvailable
-call:func_camera_check_801E31E4+0xb0 = exp_dashAvailable
+call:func_camera_check_801E0118+0xc = exp_hasSignDetector
+call:func_camera_check_801E2EF4+0x38 = exp_hasSignDetector
+call:func_camera_check_801E2F58+0x8c = exp_hasSignDetector
+call:func_camera_check_801E30CC+0x48 = exp_hasSignDetector
+call:func_camera_check_801E3140+0x20 = exp_hasSignDetector
+call:func_camera_check_801E31E4+0xb0 = exp_hasSignDetector
