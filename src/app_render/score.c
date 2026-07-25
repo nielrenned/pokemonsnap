@@ -471,13 +471,14 @@ void score_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     if (score_PixelCountInCenter[id] != 0) {
         score->isWellFramed = true;
         score->totalScore *= 2;
+    }
 
-        for (i = 0; i < id; i++) {
-            score_AddSamePkmnBonus(score, photo, i, pkmnID);
-        }
-        for (i = id + 1; i < score_PokemonCount; i++) {
-            score_AddSamePkmnBonus(score, photo, i, pkmnID);
-        }
+    // This would make multiple pokemon possible WITHOUT it being well-framed
+    for (i = 0; i < id; i++) {
+        score_AddSamePkmnBonus(score, photo, i, pkmnID);
+    }
+    for (i = id + 1; i < score_PokemonCount; i++) {
+        score_AddSamePkmnBonus(score, photo, i, pkmnID);
     }
 }
 
