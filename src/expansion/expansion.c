@@ -7,6 +7,8 @@
 #include "apdata.h"
 
 extern UnkBigBoy* D_800C21B0_5F050;
+extern s32 func_800C0290_5D130(void);
+extern void func_800E5298_8AAAB8(void); // Oak's Lab "found a split in the path" dispatcher
 extern s32 photocheck_oaksMark(Photo* photo); // The photo scoring UI routine
 extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
 extern s32 func_8009BB4C(s32);
@@ -73,6 +75,7 @@ extern s32 gCanUseOverride;
 extern u32 gCanUseMask;
 extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
+extern u32 gDialogFlags;
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -584,4 +587,25 @@ s32 exp_registerPhoto(Photo* photo) {
     }
 
     return ret;
+}
+
+// Hooks the function call that runs the "You found all pokemon sign pics" dialog.
+// We should return 6 if we want the sign pics dialog to run, and 0 otherwise.
+s32 exp_runSignPicDialog(void) {
+    if ((gDialogFlags & 1) != 0) {
+        gDialogFlags &= ~1;
+        return 6;
+    }
+    return 0;
+}
+
+extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
+
+// Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
+// right before Oak's Lab's "found a split in the path" dispatcher runs.
+void exp_labPreDialogHook(void) {
+    if ((gDialogFlags & 1) != 0) {
+        func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
+    }
+    func_800E5298_8AAAB8();
 }

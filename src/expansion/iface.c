@@ -12,6 +12,7 @@
 //   0x8040000C  gCanUseMask        bit0=apple,1=pester,2=flute,3=dash
 //   0x80400010  gCourseOverride    !=0: all courses unlocked
 //   0x80400014  gCourseUnlockMask  bit0=Beach..6=Rainbow
+//   0x80400018  gDialogFlags       bit0=Cloud Dialog
 
 u32 gExpansionMagic = 0x534E4150;
 s32 gMaxFilm = 15;
@@ -19,6 +20,7 @@ s32 gCanUseOverride = 1;
 u32 gCanUseMask = 0;
 s32 gCourseOverride = 1;
 u32 gCourseUnlockMask = 0;
+u32 gDialogFlags = 0;
 
 // AP data block, pinned right after the scalar interface (magic initializer
 // forces .data placement so the client address is stable: scores at 0x80400020).

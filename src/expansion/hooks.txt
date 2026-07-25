@@ -32,6 +32,12 @@ call:func_800E3404_8A8C24+0x114 = exp_courseCursorInit
 # Same mapping for the course-confirmation focus loop.
 call:func_800E3ED4_8A96F4+0x500 = exp_courseConfirmFocus
 
+# Hook the Oak's Lab Sign pic dialog check
+call:func_800E5298_8AAAB8+0x1f0 = exp_runSignPicDialog
+
+# Hook the function that run's the dialog upon return to oak's lab
+call:func_800E2C0C_8A842C+0x334 = exp_labPreDialogHook
+
 # Remove the in-course tutorial: force the initUI Pokedex-count check to report
 # the tutorial as finished (sets the flag + returns >=4 so IsTutorialEnabled=0).
 call:initUI+0x174 = exp_tutorialDone

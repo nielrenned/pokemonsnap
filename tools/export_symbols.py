@@ -61,6 +61,7 @@ def main():
         "gCourseOverride": (s["gCourseOverride"], "s32", "rw", "!=0: all courses unlocked"),
         "gCourseUnlockMask": (s["gCourseUnlockMask"], "u32", "rw",
                               "bit0=Beach,1=Tunnel,2=Volcano,3=Cave,4=River,5=Valley,6=Rainbow (used when gCourseOverride==0)"),
+        "gDialogFlags": (s["gDialogFlags"], "u32", "rw", "bit0=Cloud Dialog"),
         "apMagic": (ap + 0x00, "u32", "r", "0x53414431 'SAD1' when the AP block is valid"),
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
         "speciesScores": (ap + 0x08, "u16[69][8]", "r",
