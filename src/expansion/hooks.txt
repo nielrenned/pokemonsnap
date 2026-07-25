@@ -62,16 +62,16 @@ call:func_801E2ED4_992944+0xa3c = exp_oakReportWait
 # which the AP build never sets (the dash is an AP item driving canUse). Retarget
 # those checks to follow the canUse dash signal, like the dash icon/boost do.
 # score.c sign scoring (6 cases):
-call:func_800A0EA4+0xd0 = exp_dashAvailable
-call:func_800A0EA4+0xfc = exp_dashAvailable
-call:func_800A0EA4+0x128 = exp_dashAvailable
-call:func_800A0EA4+0x154 = exp_dashAvailable
-call:func_800A0EA4+0x180 = exp_dashAvailable
-call:func_800A0EA4+0x1ac = exp_dashAvailable
+call:func_800A0EA4+0xd0 = exp_hasSignDetector
+call:func_800A0EA4+0xfc = exp_hasSignDetector
+call:func_800A0EA4+0x128 = exp_hasSignDetector
+call:func_800A0EA4+0x154 = exp_hasSignDetector
+call:func_800A0EA4+0x180 = exp_hasSignDetector
+call:func_800A0EA4+0x1ac = exp_hasSignDetector
 # camera_check recognition / selectability / "showable" checks:
-call:func_camera_check_801E0118+0xc = exp_dashAvailable
-call:func_camera_check_801E2EF4+0x38 = exp_dashAvailable
-call:func_camera_check_801E2F58+0x8c = exp_dashAvailable
-call:func_camera_check_801E30CC+0x48 = exp_dashAvailable
-call:func_camera_check_801E3140+0x20 = exp_dashAvailable
-call:func_camera_check_801E31E4+0xb0 = exp_dashAvailable
+call:func_camera_check_801E0118+0xc = exp_hasSignDetector
+call:func_camera_check_801E2EF4+0x38 = exp_hasSignDetector
+call:func_camera_check_801E2F58+0x8c = exp_hasSignDetector
+call:func_camera_check_801E30CC+0x48 = exp_hasSignDetector
+call:func_camera_check_801E3140+0x20 = exp_hasSignDetector
+call:func_camera_check_801E31E4+0xb0 = exp_hasSignDetector

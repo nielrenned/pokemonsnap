@@ -99,6 +99,10 @@ s32 exp_dashAvailable(void) {
     return exp_canUse(3, D_800C21B0_5F050->data.canUseDashEngine);
 }
 
+s32 exp_hasSignDetector(void) {
+    return exp_canUse(4, D_800C21B0_5F050->data.canUseSignDetector);
+}
+
 // Replaces the func_800BF864_5C704() (Pokedex count) call in initUI that gates
 // the in-course tutorial: marks the tutorial finished (persisted) and returns a
 // count >= 4 so IsTutorialEnabled is forced false.
