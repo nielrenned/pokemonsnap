@@ -659,7 +659,6 @@ void exp_skipUnlockAnimation(void) {
         buttonIndex = newRank + 6;
         UILayout_ShowButton(true, buttonIndex);
         UILayout_SetButtonScale(1.0f, buttonIndex);
-        func_800E61B4_8AB9D4(3, 0);
         UIElement_Draw(button);
     }
 }
