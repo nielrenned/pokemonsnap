@@ -6,10 +6,20 @@
 // Validity marker for the AP flash block.
 #define AP_MAGIC 0x53414431 // 'SAD1'
 
+typedef struct ApSpeciesScore {
+    s16 specialScore;
+    s16 poseScore;
+    s16 sizeScore;
+    s16 isWellFramed;
+    s16 samePkmnBonus;
+    s16 specialPoseFlags;
+} ApSpeciesScore;
+
 struct ApData_s {
     u32 magic;
     u32 checksum; // sum over speciesScores
-    s16 speciesScores[69][8]; // [species slot][0=special,1=pose,2=size,3=technique,4=samePkmn,5=specialFlags,6=levelID,7=unused]
+    ApSpeciesScore speciesScores[73];
+    u8 signsFound[6];
 };
 
 // AP data block, stored in expansion RAM (pinned in iface.c) and persisted to a
@@ -17,7 +27,7 @@ struct ApData_s {
 // to 0x80-sized pages so flash read/write never overruns the buffer.
 typedef union {
     struct ApData_s;
-    u8 padding[0x480];
+    u8 padding[0x400];
 } ApData;
 
 extern ApData gApData;
