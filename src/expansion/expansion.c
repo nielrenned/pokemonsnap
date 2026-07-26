@@ -5,6 +5,8 @@
 #include "sys/render.h"
 #include "PR/os_flash.h"
 #include "apdata.h"
+#include "window/window.h"
+#include "oaks_lab/oaks_lab.h"
 
 extern UnkBigBoy* D_800C21B0_5F050;
 extern s32 func_800C0290_5D130(void);
@@ -311,8 +313,6 @@ void exp_awardItems(s32 score) {
     }
 }
 
-extern s32 func_80374F30_8486E0(void* elem, s32 flag);
-
 static s32 sSkipOakReportBox = 0;
 
 // The report eval shows a second Oak textbox telling the player how many more
@@ -608,4 +608,28 @@ void exp_labPreDialogHook(void) {
         func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
     }
     func_800E5298_8AAAB8();
+}
+
+// Skips the "new course" unlock animation by replacing the 
+// function and not running the animation code.
+// This is also where we could grant the 'X pokemon photographed' rewards.
+void exp_skipUnlockAnimation(void) {
+    UIElement* button;
+    s32 buttonIndex;
+
+    button = func_800E1B40_8A7360();
+    UIElement_SetFont(button, 12);
+    UIText_SetShadowOffset(1);
+    UIText_SetSpacing(-1, 3);
+
+    // We still need to update various flags, but we'll skip the animation
+    s32 newRank = func_800C0290_5D130();
+    if (func_800BFC5C_5CAFC() < newRank) {
+        func_800BFC70_5CB10(newRank);
+        buttonIndex = newRank + 6;
+        UILayout_ShowButton(true, buttonIndex);
+        UILayout_SetButtonScale(1.0f, buttonIndex);
+        func_800E61B4_8AB9D4(3, 0);
+        UIElement_Draw(button);
+    }
 }
