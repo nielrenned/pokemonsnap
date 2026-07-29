@@ -20,6 +20,7 @@ struct ApData_s {
     u32 checksum; // sum over speciesScores
     ApSpeciesScore speciesScores[73];
     u8 signsFound[6];
+    u8 secretExits;
 };
 
 // AP data block, stored in expansion RAM (pinned in iface.c) and persisted to a

@@ -66,7 +66,8 @@ def main():
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
         "speciesScores": (ap + 0x08, "s16[73][6]", "r",
                           "[slot][0=special, 1=pose, 2=size, 3=technique, 4=samePkmn, 5=poseFlags]; slot=getSpeciesSlot(pokemonID, levelID)"),
-        "signsFound": (ap + 0x08 + 73 * 2 * 6, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]")
+        "signsFound": (ap + 0x08 + 73 * 2 * 6, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
+        "secretExits": (ap + 0x08 + 73 * 2 * 6 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
     }
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.
