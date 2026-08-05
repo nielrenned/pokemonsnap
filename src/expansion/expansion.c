@@ -13,6 +13,7 @@ extern s32 func_800C0290_5D130(void);
 extern void func_800E5298_8AAAB8(void); // Oak's Lab "found a split in the path" dispatcher
 extern s32 photocheck_oaksMark(Photo* photo); // The photo scoring UI routine
 extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
+extern void func_800BF1F0_5C090(void); // create fresh save
 extern s32 func_8009BB4C(s32);
 extern OSMesgQueue D_800E17A8_7E648; // flash message queue
 extern s32 IsInputDisabled;
@@ -85,6 +86,11 @@ s32 exp_canUse(s32 bit, s32 savedBit) {
 
 void expansion_init(void) {
     gExpansionMagic = 0x4F4B4159;
+}
+
+void exp_createFreshSave(void) {
+    D_800C21B0_5F050->data.invertedY = 1; // Set the default camera movement to Normal
+    func_800BF1F0_5C090();
 }
 
 // Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
