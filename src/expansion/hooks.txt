@@ -5,6 +5,9 @@
 func_8035E508_4FE918 = exp_filmGetRemaining
 func_8035E52C_4FE93C = exp_filmUpdateCounter
 
+# Make non-inverted camera the default
+call:func_800C042C_5D2CC+0x18c = exp_createFreshSave
+
 # Independent per-item use, gated on canUse flags
 handleItemButtonsPress = exp_handleItemButtonsPress
 
