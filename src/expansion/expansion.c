@@ -639,6 +639,7 @@ extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
 // Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
 // right before Oak's Lab's "found a split in the path" dispatcher runs.
 void exp_labPreDialogHook(void) {
+    setLevelId(-1);
     if ((gDialogFlags & 1) != 0) {
         func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
     }

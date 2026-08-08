@@ -52,6 +52,7 @@ def main():
     }
 
     symbols = {
+        "gLevelID": (s["gLevelID"], "s32", "r", "Most recently entered level (defaults to -1)"),
         "gExpansionMagic": (s["gExpansionMagic"], "u32", "r",
                             "0x534E4150 'SNAP' in ROM, becomes 0x4F4B4159 'OKAY' once loaded"),
         "gMaxFilm": (s["gMaxFilm"], "s32", "rw", "film cap (below 60)"),
