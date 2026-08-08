@@ -134,6 +134,10 @@ void exp_handleItemButtonsPress(GObj* obj) {
     s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
     s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
     s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
+
+    // We need to update IsDashEngineAvailable here. Otherwise, the icons do
+    // appear, but the dash engine is unusable. Idk why there are two different
+    // checks in the main code for "can the player use the dash engine?" ¯\(ツ)/¯
     IsDashEngineAvailable = exp_dashAvailable();
 
     if (!Icons_IsZoomedIn && D_803AF8BC_54FCCC <= 0) {
@@ -257,7 +261,8 @@ void exp_Icons_Init(void) {
     omLinkGObjDL(gobj, &renDrawSprite, 1, 0x80000000, -1);
     Icons_MainObject = gobj;
 
-    // Create all the icons and set the items to hidden by default
+    // Create all the icons and set the items/dash engine to hidden by default.
+    // Then every frame, we'll unhide them if the player receives the item.
     spr = &Icons_IconObjects[ICON_ID_ZOOM];
     sprDef = &Icons_IconDefs[ICON_ID_ZOOM];
     spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
@@ -331,6 +336,8 @@ void exp_Icons_FinishZoomIn(GObj* arg0) {
     s32 isMoving;
 
     for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+        // Since the icons are always initialized, we need to skip re-enabling
+        // any icons that we don't have the AP items for.
         if (i == ICON_ID_DASH_ZOOMED && !exp_dashAvailable()) {
             continue;
         }
@@ -381,6 +388,8 @@ void exp_Icons_FinishZoomOut(GObj* arg0) {
     s32 dash = exp_dashAvailable();
 
     for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+        // Since the icons are always initialized, we need to skip re-enabling
+        // any icons that we don't have the AP items for.
         if (
             (i == ICON_ID_APPLE && !apple) ||
             (i == ICON_ID_PESTER_BALL && !pester) || 
