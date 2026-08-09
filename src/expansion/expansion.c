@@ -137,7 +137,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
 
     // We need to update IsDashEngineAvailable here. Otherwise, the icons do
     // appear, but the dash engine is unusable. Idk why there are two different
-    // checks in the main code for "can the player use the dash engine?" ¯\(ツ)/¯
+    // checks in the main code for "can the player use the dash engine?"
     IsDashEngineAvailable = exp_dashAvailable();
 
     if (!Icons_IsZoomedIn && D_803AF8BC_54FCCC <= 0) {
