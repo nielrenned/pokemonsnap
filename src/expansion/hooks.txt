@@ -13,6 +13,8 @@ handleItemButtonsPress = exp_handleItemButtonsPress
 
 # Icon display follows canUse per-item
 Icons_Init = exp_Icons_Init
+Icons_FinishZoomIn = exp_Icons_FinishZoomIn
+Icons_FinishZoomOut = exp_Icons_FinishZoomOut
 
 # Independent awards + flute requires rank 5 (detour into the award block)
 func_801E2ED4_992944+0x4a8 = exp_awardDetour

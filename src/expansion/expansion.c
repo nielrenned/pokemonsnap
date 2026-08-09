@@ -21,6 +21,7 @@ extern s32 ThrowItemTimeout;
 extern s32 PressPokeFluteTimeout;
 extern s32 LastItemId;
 extern Vec3f PlayerVelocity;
+extern s8 IsDashEngineAvailable;
 
 // Mirrors of icons.c-local types used by Icons_Init.
 enum IconSpriteIds {
@@ -50,17 +51,23 @@ typedef struct SpriteStruct {
     /* 0x0C */ char unused[12];
 } SpriteStruct;
 
+extern u8 Icons_IsZoomedIn;
+extern s32 Icons_TotalMoveOutFrameCounter;
+extern s32 Icons_MoveOutCounter[8];
 extern SpriteStruct Icons_IconObjects[];
-extern SpriteDefStruct Icons_IconDefs[];
+extern SpriteDefStruct Icons_IconDefs[8];
 extern SObj* Icons_ButtonIcons[];
 extern SObj* Icons_ButtonIconsCopy[];
 extern s32 D_80388204_528614[];
 extern GObj* Icons_MainObject;
 extern u32 D_8038821C_52862C;
+extern s32 D_803AF8BC_54FCCC;
 extern s32 Icons_MoveOutCounter[8];
 extern u8 Icons_ItemFlags;
 extern void Icons_UpdateDefault(GObj*);
 extern void Icons_UpdateDashEngineIcon(GObj*);
+extern void Icons_FinishZoomIn(GObj* arg0);
+extern void Icons_MoveIcon(s32 id, s32 offset);
 
 extern UNK_TYPE D_80388F58_529368;
 extern UNK_TYPE D_803890B8_5294C8;
@@ -123,6 +130,39 @@ s32 exp_tutorialDone(void) {
 }
 
 void exp_handleItemButtonsPress(GObj* obj) {
+    // This runs every frame while in-course, so we'll add the check for the items here
+    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
+
+    // We need to update IsDashEngineAvailable here. Otherwise, the icons do
+    // appear, but the dash engine is unusable. Idk why there are two different
+    // checks in the main code for "can the player use the dash engine?"
+    IsDashEngineAvailable = exp_dashAvailable();
+
+    if (!Icons_IsZoomedIn && D_803AF8BC_54FCCC <= 0) {
+        if (apple && Icons_IconObjects[ICON_ID_APPLE].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[ICON_ID_APPLE].spriteObj->sprite, SP_HIDDEN);
+        }
+        if (pester && Icons_IconObjects[ICON_ID_PESTER_BALL].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[ICON_ID_PESTER_BALL].spriteObj->sprite, SP_HIDDEN);
+        }
+        if (flute && Icons_IconObjects[ICON_ID_FLUTE].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[ICON_ID_FLUTE].spriteObj->sprite, SP_HIDDEN);
+        }
+
+        if (IsDashEngineAvailable && Icons_IconObjects[ICON_ID_DASH].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[ICON_ID_DASH].spriteObj->sprite, SP_HIDDEN);
+        }
+    }
+
+    if (Icons_IsZoomedIn && D_803AF8BC_54FCCC >= 8) {
+        if (IsDashEngineAvailable && Icons_IconObjects[ICON_ID_DASH_ZOOMED].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[ICON_ID_DASH_ZOOMED].spriteObj->sprite, SP_HIDDEN);
+        }
+    }
+    
+
     if (!IsInputDisabled) {
         if ((gContInputPressedButtons & D_CBUTTONS) &&
             exp_canUse(2, D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
@@ -208,18 +248,9 @@ void exp_Icons_Init(void) {
     s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
 
     progressFlags = getProgressFlags();
-    Icons_ItemFlags = 0;
+    Icons_ItemFlags = PF_HAS_APPLE | PF_HAS_PESTER_BALL | PF_HAS_FLUTE;
     D_8038821C_52862C = 0;
-    if (apple) {
-        Icons_ItemFlags |= PF_HAS_APPLE;
-    }
-    if (pester) {
-        Icons_ItemFlags |= PF_HAS_PESTER_BALL;
-    }
-    if (flute) {
-        Icons_ItemFlags |= PF_HAS_FLUTE;
-    }
-    Icons_NumItemsAvailable = (apple != 0) + (pester != 0) + (flute != 0);
+    Icons_NumItemsAvailable = 3;
 
     if (Icons_NumItemsAvailable > 0) {
         LastItemId = D_80388204_528614[D_8038821C_52862C];
@@ -230,26 +261,27 @@ void exp_Icons_Init(void) {
     omLinkGObjDL(gobj, &renDrawSprite, 1, 0x80000000, -1);
     Icons_MainObject = gobj;
 
+    // Create all the icons and set the items/dash engine to hidden by default.
+    // Then every frame, we'll unhide them if the player receives the item.
     spr = &Icons_IconObjects[ICON_ID_ZOOM];
     sprDef = &Icons_IconDefs[ICON_ID_ZOOM];
     spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
     spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
     SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
 
-    if (progressFlags & PF_HAS_DASH_ENGINE) {
-        spr = &Icons_IconObjects[ICON_ID_DASH];
-        sprDef = &Icons_IconDefs[ICON_ID_DASH];
-        spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
-        spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
-        SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    spr = &Icons_IconObjects[ICON_ID_DASH];
+    sprDef = &Icons_IconDefs[ICON_ID_DASH];
+    spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
+    spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
+    SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    if (!exp_dashAvailable()) spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
 
-        spr = &Icons_IconObjects[ICON_ID_DASH_ZOOMED];
-        sprDef = &Icons_IconDefs[ICON_ID_DASH_ZOOMED];
-        spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
-        spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
-        SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
-        spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
-    }
+    spr = &Icons_IconObjects[ICON_ID_DASH_ZOOMED];
+    sprDef = &Icons_IconDefs[ICON_ID_DASH_ZOOMED];
+    spr->spriteObj = omGObjAddSprite(gobj, sprDef->spriteDef);
+    spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
+    SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
 
     spr = &Icons_IconObjects[ICON_ID_TAKE_PHOTO];
     sprDef = &Icons_IconDefs[ICON_ID_TAKE_PHOTO];
@@ -257,7 +289,7 @@ void exp_Icons_Init(void) {
     spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
     SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
     spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
-
+    
     if (progressFlags & PF_ZOOM_SWITCH) {
         spr = &Icons_IconObjects[ICON_ID_ZOOM_OFF];
         sprDef = &Icons_IconDefs[ICON_ID_ZOOM_OFF];
@@ -267,27 +299,26 @@ void exp_Icons_Init(void) {
         spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
     }
 
-    if (flute) {
-        spr = &Icons_IconObjects[ICON_ID_FLUTE];
-        sprDef = &Icons_IconDefs[ICON_ID_FLUTE];
-        spr->spriteObj = Icons_ButtonIcons[ICON_ID_FLUTE] = omGObjAddSprite(gobj, sprDef->spriteDef);
-        spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
-        SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
-    }
-    if (apple) {
-        spr = &Icons_IconObjects[ICON_ID_APPLE];
-        sprDef = &Icons_IconDefs[ICON_ID_APPLE];
-        spr->spriteObj = Icons_ButtonIcons[ICON_ID_APPLE] = omGObjAddSprite(gobj, sprDef->spriteDef);
-        spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
-        SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
-    }
-    if (pester) {
-        spr = &Icons_IconObjects[ICON_ID_PESTER_BALL];
-        sprDef = &Icons_IconDefs[ICON_ID_PESTER_BALL];
-        spr->spriteObj = Icons_ButtonIcons[ICON_ID_PESTER_BALL] = omGObjAddSprite(gobj, sprDef->spriteDef);
-        spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
-        SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
-    }
+    spr = &Icons_IconObjects[ICON_ID_FLUTE];
+    sprDef = &Icons_IconDefs[ICON_ID_FLUTE];
+    spr->spriteObj = Icons_ButtonIcons[ICON_ID_FLUTE] = omGObjAddSprite(gobj, sprDef->spriteDef);
+    spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
+    SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    if (!flute) spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
+
+    spr = &Icons_IconObjects[ICON_ID_APPLE];
+    sprDef = &Icons_IconDefs[ICON_ID_APPLE];
+    spr->spriteObj = Icons_ButtonIcons[ICON_ID_APPLE] = omGObjAddSprite(gobj, sprDef->spriteDef);
+    spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
+    SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    if (!apple) spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
+
+    spr = &Icons_IconObjects[ICON_ID_PESTER_BALL];
+    sprDef = &Icons_IconDefs[ICON_ID_PESTER_BALL];
+    spr->spriteObj = Icons_ButtonIcons[ICON_ID_PESTER_BALL] = omGObjAddSprite(gobj, sprDef->spriteDef);
+    spMove(&spr->spriteObj->sprite, sprDef->x, sprDef->y);
+    SET_SPRITE_POS_PTR(spr, sprDef->x, sprDef->y);
+    if (!pester) spSetAttribute(&spr->spriteObj->sprite, SP_HIDDEN);
 
     Icons_ButtonIconsCopy[0] = Icons_ButtonIcons[0];
     Icons_ButtonIconsCopy[1] = Icons_ButtonIcons[1];
@@ -298,6 +329,110 @@ void exp_Icons_Init(void) {
     for (i = 0; i < ARRAY_COUNT(Icons_MoveOutCounter); i++) {
         Icons_MoveOutCounter[i] = 0;
     }
+}
+
+void exp_Icons_FinishZoomIn(GObj* arg0) {
+    s32 i;
+    s32 isMoving;
+
+    for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+        // Since the icons are always initialized, we need to skip re-enabling
+        // any icons that we don't have the AP items for.
+        if (i == ICON_ID_DASH_ZOOMED && !exp_dashAvailable()) {
+            continue;
+        }
+        if (Icons_IconDefs[i].shownWhenZoomedIn && Icons_IconObjects[i].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[i].spriteObj->sprite, SP_HIDDEN);
+        }
+    }
+
+    while (true) {
+        isMoving = false;
+        if (!Icons_IsZoomedIn) {
+            break;
+        }
+
+        for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+            if (Icons_IconDefs[i].shownWhenZoomedIn && Icons_IconObjects[i].spriteObj != NULL) {
+                if (Icons_IconDefs[i].unk_10 <= D_803AF8BC_54FCCC) {
+                    if (Icons_MoveOutCounter[i] < 8) {
+                        isMoving = true;
+                        Icons_MoveOutCounter[i]++;
+                        Icons_MoveIcon(i, -6);
+                    }
+                } else {
+                    isMoving = true;
+                }
+            }
+        }
+
+        if (isMoving) {
+            if (D_803AF8BC_54FCCC < 8) {
+                D_803AF8BC_54FCCC++;
+            }
+            ohWait(1);
+            continue;
+        }
+        break;
+    }
+    omEndProcess(NULL);
+}
+
+void exp_Icons_FinishZoomOut(GObj* arg0) {
+    s32 i;
+    s32 isMoving;
+    
+    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
+    s32 dash = exp_dashAvailable();
+
+    for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+        // Since the icons are always initialized, we need to skip re-enabling
+        // any icons that we don't have the AP items for.
+        if (
+            (i == ICON_ID_APPLE && !apple) ||
+            (i == ICON_ID_PESTER_BALL && !pester) || 
+            (i == ICON_ID_FLUTE && !flute) ||
+            (i == ICON_ID_DASH && !dash)
+        ) {
+            continue;
+        }
+        if (!Icons_IconDefs[i].shownWhenZoomedIn && Icons_IconObjects[i].spriteObj != NULL) {
+            spClearAttribute(&Icons_IconObjects[i].spriteObj->sprite, SP_HIDDEN);
+        }
+    }
+
+    while (true) {
+        isMoving = false;
+        if (Icons_IsZoomedIn == true) {
+            break;
+        }
+
+        for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
+            if (!Icons_IconDefs[i].shownWhenZoomedIn && Icons_IconObjects[i].spriteObj != NULL) {
+                if (Icons_IconDefs[i].unk_10 <= 8 - Icons_TotalMoveOutFrameCounter) {
+                    if (Icons_MoveOutCounter[i] > 0) {
+                        isMoving = true;
+                        Icons_MoveOutCounter[i]--;
+                        Icons_MoveIcon(i, -6);
+                    }
+                } else {
+                    isMoving = true;
+                }
+            }
+        }
+
+        if (isMoving) {
+            if (Icons_TotalMoveOutFrameCounter > 0) {
+                Icons_TotalMoveOutFrameCounter--;
+            }
+            ohWait(1);
+            continue;
+        }
+        break;
+    }
+    omEndProcess(NULL);
 }
 
 extern s32 D_801F3E28_9A3898;
