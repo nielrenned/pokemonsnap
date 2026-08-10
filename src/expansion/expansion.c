@@ -22,6 +22,7 @@ extern s32 PressPokeFluteTimeout;
 extern s32 LastItemId;
 extern Vec3f PlayerVelocity;
 extern s8 IsDashEngineAvailable;
+extern s32 D_800E1500_7E3A0;
 
 // Mirrors of icons.c-local types used by Icons_Init.
 enum IconSpriteIds {
@@ -769,16 +770,129 @@ s32 exp_runSignPicDialog(void) {
     return 0;
 }
 
+s32 exp_skipSplitPathDialog(void) {
+    return 0;
+}
+
+extern s32 D_80206B50_9CC370;
+
+void exp_oaksLabCourseUnlockDialog(void) {
+    char* pokemon_dialog_6[] = {
+        "\\w\\1Take \\M\\7this 6-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_22[] = {
+        "\\w\\1Take \\M\\7this 22-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_40[] = {
+        "\\w\\1Take \\M\\7this 40-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* error_dialog[] = {
+        "\\w\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
+        "If you see this message,\nplease \\hreport it\\p.",
+        0x00000000,
+    };
+
+    UIElement* text_box;
+    text_box = func_800E1B40_8A7360();
+    
+    if ((gDialogFlags & 0x70) == 0) {
+        func_800E4578_8A9D98(error_dialog, pokemon_dialog_6, 0, true);
+        return;
+    }
+
+    if ((gDialogFlags & 0x10) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
+        gDialogFlags &= ~0x10;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
+
+    if ((gDialogFlags & 0x20) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_22, 0, true);
+        gDialogFlags &= ~0x20;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    } 
+
+    if ((gDialogFlags & 0x40) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_40, 0, true);
+        gDialogFlags &= ~0x40;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
+}
+
 extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
 
 // Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
 // right before Oak's Lab's "found a split in the path" dispatcher runs.
 void exp_labPreDialogHook(void) {
     setLevelId(-1);
-    if ((gDialogFlags & 1) != 0) {
+    if ((gDialogFlags & 0x01) != 0) {
         func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
+        // We intentionally don't clear the flag here, due to different behavior
+    }
+    if ((gDialogFlags & 0x02) != 0) {
+        func_800AAED0(0x80); // Set the flag to run the apple dialog
+        gDialogFlags &= ~0x02;
+    }
+    if ((gDialogFlags & 0x04) != 0) {
+        func_800AAED0(0x100); // Set the flag to run the pester dialog
+        gDialogFlags &= ~0x04;
+    }
+    if ((gDialogFlags & 0x08) != 0) {
+        func_800AAED0(0x200); // Set the flag to run the flute dialog
+        gDialogFlags &= ~0x08;
+    }
+
+    if ((gDialogFlags & 0x10) != 0 || (gDialogFlags & 0x20) != 0 || (gDialogFlags & 0x40) != 0) {
+        D_80206B50_9CC370 = 0;
+        func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
+        // We intentionally don't clear the flag here, due to different behavior
     }
     func_800E5298_8AAAB8();
+}
+
+void exp_itemDialog(s32 arg0) {
+    char* apple_dialog[] = {
+        "\\w\\1Take \\Mthis \\7apple-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+    char* pester_dialog[] = {
+        "\\w\\1Take \\Mthis \\8pester ball-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+    char* flute_dialog[] = {
+        "\\w\\1Take \\Mthis \\9Pokε Flute-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    UIElement* text_box;
+    text_box = func_800E1B40_8A7360();
+
+    switch (arg0) {
+        case 0:
+            func_800E4578_8A9D98(text_box, apple_dialog, 0, true);
+            break;
+        case 1:
+            func_800E4578_8A9D98(text_box, pester_dialog, 0, true);
+            break;
+        case 2:
+            func_800E4578_8A9D98(text_box, flute_dialog, 0, true);
+            break;
+    }
+
+    auPlaySound(0x4D);
+    func_800E1D68_8A7588(0);
 }
 
 // Skips the "new course" unlock animation by replacing the 
