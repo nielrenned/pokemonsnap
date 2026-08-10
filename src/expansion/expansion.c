@@ -868,11 +868,11 @@ void exp_itemDialog(s32 arg0) {
         0x00000000,
     };
     char* pester_dialog[] = {
-        "\\w\\1Take \\Mthis \\8pester ball-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\w\\1Take \\Mthis \\7pester ball-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
     char* flute_dialog[] = {
-        "\\w\\1Take \\Mthis \\9Pokε Flute-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\w\\1Take \\Mthis \\7Pokε Flute-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
@@ -929,3 +929,12 @@ void exp_secretExitTaken(GObj* obj) {
     EndLevelCb(END_LEVEL_REASON_SECRET_EXIT);
     omEndProcess(NULL);
 }
+
+// Replace the apple bitmap in Oak's Lab with the Archipelago icon
+u8 icon_archipelago_logo[] = {
+#include "icon_archipelago_logo.png.bin.c"
+};
+
+Bitmap D_80141F38_907758[] = {
+    { 42, 44, 0, 0, icon_archipelago_logo, 42, 0 },
+};
