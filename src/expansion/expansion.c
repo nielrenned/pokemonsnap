@@ -801,7 +801,7 @@ void exp_oaksLabCourseUnlockDialog(void) {
     UIElement* text_box;
     text_box = func_800E1B40_8A7360();
     
-    if ((gDialogFlags & 0x70) == 0) {
+    if ((gDialogFlags & 0x40 & 0x20 & 0x10) == 0) {
         func_800E4578_8A9D98(error_dialog, pokemon_dialog_6, 0, true);
         return;
     }
