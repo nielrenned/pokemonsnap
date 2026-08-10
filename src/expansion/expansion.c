@@ -778,22 +778,22 @@ extern s32 D_80206B50_9CC370;
 
 void exp_oaksLabCourseUnlockDialog(void) {
     char* pokemon_dialog_6[] = {
-        "\\w\\1Take \\M\\7this 6-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 6 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* pokemon_dialog_22[] = {
-        "\\w\\1Take \\M\\7this 22-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 22 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* pokemon_dialog_40[] = {
-        "\\w\\1Take \\M\\7this 40-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 40 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* error_dialog[] = {
-        "\\w\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
+        "\\t\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
         "If you see this message,\nplease \\hreport it\\p.",
         0x00000000,
     };
@@ -801,8 +801,8 @@ void exp_oaksLabCourseUnlockDialog(void) {
     UIElement* text_box;
     text_box = func_800E1B40_8A7360();
     
-    if ((gDialogFlags & 0x40 & 0x20 & 0x10) == 0) {
-        func_800E4578_8A9D98(error_dialog, pokemon_dialog_6, 0, true);
+    if ((gDialogFlags & (0x40 | 0x20 | 0x10)) == 0) {
+        func_800E4578_8A9D98(text_box, error_dialog, 0, true);
         return;
     }
 
@@ -864,15 +864,18 @@ void exp_labPreDialogHook(void) {
 
 void exp_itemDialog(s32 arg0) {
     char* apple_dialog[] = {
-        "\\w\\1Take \\Mthis \\7apple-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1Your PKMN Report score\nsurpassed 24,000!",
+        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
     char* pester_dialog[] = {
-        "\\w\\1Take \\Mthis \\7pester ball-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1Your PKMN Report score\nsurpassed 72,500!",
+        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
     char* flute_dialog[] = {
-        "\\w\\1Take \\Mthis \\7Pokε Flute-shaped\\t\n\\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1Your PKMN Report score\nsurpassed 130,000!",
+        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
