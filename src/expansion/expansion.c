@@ -741,16 +741,17 @@ s32 exp_registerPhoto(Photo* photo) {
     slot = getSpeciesSlot(photo->pkmnID, photo->unk_0->levelID);
 
     if (0 <= slot && slot < ARRAY_COUNT(gApData.speciesScores)) {
-        // TODO: right now, we're saving the max of each score part
-        // separately. But we should probably only overwrite the scores
-        // if the total is higher.
         ApSpeciesScore* score = &gApData.speciesScores[slot];
-
+        
+        // We'll update everything as a way to keep track of what types
+        // of photos we've taken, along with total score.
+        // Eventually this could be reduced to bit flags, if needed.
         score->specialScore  = max(score->specialScore, photo->specialBonus);
         score->poseScore     = max(score->poseScore, photo->posePts);
         score->sizeScore     = max(score->sizeScore, photo->proximityScore);
         score->isWellFramed  = photo->isWellFramed;
         score->samePkmnBonus = max(score->samePkmnBonus, photo->samePkmnBonus);
+        score->totalScore    = max(score->totalScore, photo->totalScore);
             
         if (photo->specialID > 0) {
             score->specialPoseFlags |= (1 << (photo->specialID - 1));
