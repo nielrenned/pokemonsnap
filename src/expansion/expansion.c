@@ -98,6 +98,8 @@ void expansion_init(void) {
 
 void exp_createFreshSave(void) {
     D_800C21B0_5F050->data.invertedY = 1; // Set the default camera movement to Normal
+    D_800C21B0_5F050->data.unk_64_08 = 1; // Skip the pokemon report dialog (and enable the report)
+    D_800C21B0_5F050->data.unk_64_09 = 1; // Skip the pokemon album dialog (and enable the album)
     func_800BF1F0_5C090();
 }
 
