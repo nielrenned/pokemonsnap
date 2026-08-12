@@ -842,25 +842,20 @@ void exp_labPreDialogHook(void) {
     setLevelId(-1);
     if ((gDialogFlags & 0x01) != 0) {
         func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
-        // We intentionally don't clear the flag here, due to different behavior
     }
     if ((gDialogFlags & 0x02) != 0) {
         func_800AAED0(0x80); // Set the flag to run the apple dialog
-        gDialogFlags &= ~0x02;
     }
     if ((gDialogFlags & 0x04) != 0) {
         func_800AAED0(0x100); // Set the flag to run the pester dialog
-        gDialogFlags &= ~0x04;
     }
     if ((gDialogFlags & 0x08) != 0) {
         func_800AAED0(0x200); // Set the flag to run the flute dialog
-        gDialogFlags &= ~0x08;
     }
 
     if ((gDialogFlags & 0x10) != 0 || (gDialogFlags & 0x20) != 0 || (gDialogFlags & 0x40) != 0) {
         D_80206B50_9CC370 = 0;
         func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
-        // We intentionally don't clear the flag here, due to different behavior
     }
     func_800E5298_8AAAB8();
 }
@@ -888,12 +883,15 @@ void exp_itemDialog(s32 arg0) {
     switch (arg0) {
         case 0:
             func_800E4578_8A9D98(text_box, apple_dialog, 0, true);
+            gDialogFlags &= ~0x02;
             break;
         case 1:
             func_800E4578_8A9D98(text_box, pester_dialog, 0, true);
+            gDialogFlags &= ~0x04;
             break;
         case 2:
             func_800E4578_8A9D98(text_box, flute_dialog, 0, true);
+            gDialogFlags &= ~0x08;
             break;
     }
 
