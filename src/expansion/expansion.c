@@ -781,22 +781,22 @@ extern s32 D_80206B50_9CC370;
 
 void exp_oaksLabCourseUnlockDialog(void) {
     char* pokemon_dialog_6[] = {
-        "\\t\\1You snapped 6 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 6 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* pokemon_dialog_22[] = {
-        "\\t\\1You snapped 22 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 22 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* pokemon_dialog_40[] = {
-        "\\t\\1You snapped 40 Pokεmon!\nTake \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\t\\1You snapped 40 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
     char* error_dialog[] = {
-        "\\t\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
+        "\\w\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
         "If you see this message,\nplease \\hreport it\\p.",
         0x00000000,
     };
@@ -868,17 +868,17 @@ void exp_labPreDialogHook(void) {
 void exp_itemDialog(s32 arg0) {
     char* apple_dialog[] = {
         "\\t\\1Your PKMN Report score\nsurpassed 24,000!",
-        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
     char* pester_dialog[] = {
         "\\t\\1Your PKMN Report score\nsurpassed 72,500!",
-        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
     char* flute_dialog[] = {
         "\\t\\1Your PKMN Report score\nsurpassed 130,000!",
-        "Take \\M\\7this \\hARCHIPELAGO ITEM\\p.",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
         0x00000000,
     };
 
