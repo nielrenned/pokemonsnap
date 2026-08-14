@@ -23,6 +23,8 @@ extern s32 LastItemId;
 extern Vec3f PlayerVelocity;
 extern s8 IsDashEngineAvailable;
 extern s32 D_800E1500_7E3A0;
+extern s32 D_80206B50_9CC370;
+extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
 
 // Mirrors of icons.c-local types used by Icons_Init.
 enum IconSpriteIds {
@@ -86,7 +88,8 @@ extern s32 gCanUseOverride;
 extern u32 gCanUseMask;
 extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
-extern u32 gDialogFlags;
+extern u32 gDialogRequestFlags;
+extern u32 gDialogPlayedFlags;
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -763,11 +766,53 @@ s32 exp_registerPhoto(Photo* photo) {
     return ret;
 }
 
+#define DIALOG_RAINBOW_CLOUD 0x0001
+
+#define DIALOG_24_000        0x0002
+#define DIALOG_72_500        0x0004
+#define DIALOG_130_000       0x0008
+
+#define DIALOG_COUNT_6       0x0010
+#define DIALOG_COUNT_22      0x0020
+#define DIALOG_COUNT_40      0x0040
+
+bool exp_dialogShouldPlay(u32 dialog_flag) {
+    return ((gDialogRequestFlags & dialog_flag) != 0) && ((gDialogPlayedFlags & dialog_flag) == 0);
+}
+
+void exp_markDialogPlayed(u32 dialog_flag) {
+    gDialogPlayedFlags |= dialog_flag;
+}
+
+// Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
+// right before Oak's Lab's "found a split in the path" dispatcher runs.
+void exp_labPreDialogHook(void) {
+    setLevelId(-1);
+    if (exp_dialogShouldPlay(DIALOG_RAINBOW_CLOUD)) {
+        func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
+    }
+    if (exp_dialogShouldPlay(DIALOG_24_000)) {
+        func_800AAED0(0x80); // Set the flag to run the 24k dialog (Pokemon Food)
+    }
+    if (exp_dialogShouldPlay(DIALOG_72_500)) {
+        func_800AAED0(0x100); // Set the flag to run the 72.5k dialog (Pester Ball)
+    }
+    if (exp_dialogShouldPlay(DIALOG_130_000)) {
+        func_800AAED0(0x200); // Set the flag to run the 130k dialog (PokeFlute)
+    }
+
+    if (exp_dialogShouldPlay(DIALOG_COUNT_6) || exp_dialogShouldPlay(DIALOG_COUNT_22) || exp_dialogShouldPlay(DIALOG_COUNT_40)) {
+        D_80206B50_9CC370 = 0;
+        func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
+    }
+    func_800E5298_8AAAB8();
+}
+
 // Hooks the function call that runs the "You found all pokemon sign pics" dialog.
 // We should return 6 if we want the sign pics dialog to run, and 0 otherwise.
 s32 exp_runSignPicDialog(void) {
-    if ((gDialogFlags & 1) != 0) {
-        gDialogFlags &= ~1;
+    if (exp_dialogShouldPlay(DIALOG_RAINBOW_CLOUD)) {
+        exp_markDialogPlayed(DIALOG_RAINBOW_CLOUD);
         return 6;
     }
     return 0;
@@ -775,34 +820,6 @@ s32 exp_runSignPicDialog(void) {
 
 s32 exp_skipSplitPathDialog(void) {
     return 0;
-}
-
-extern s32 D_80206B50_9CC370;
-
-extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
-
-// Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
-// right before Oak's Lab's "found a split in the path" dispatcher runs.
-void exp_labPreDialogHook(void) {
-    setLevelId(-1);
-    if ((gDialogFlags & 0x01) != 0) {
-        func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
-    }
-    if ((gDialogFlags & 0x02) != 0) {
-        func_800AAED0(0x80); // Set the flag to run the apple dialog
-    }
-    if ((gDialogFlags & 0x04) != 0) {
-        func_800AAED0(0x100); // Set the flag to run the pester dialog
-    }
-    if ((gDialogFlags & 0x08) != 0) {
-        func_800AAED0(0x200); // Set the flag to run the flute dialog
-    }
-
-    if ((gDialogFlags & (0x10 | 0x20 | 0x40)) != 0) {
-        D_80206B50_9CC370 = 0;
-        func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
-    }
-    func_800E5298_8AAAB8();
 }
 
 void exp_itemDialog(s32 arg0) {
@@ -828,15 +845,15 @@ void exp_itemDialog(s32 arg0) {
     switch (arg0) {
         case 0:
             func_800E4578_8A9D98(text_box, apple_dialog, 0, true);
-            gDialogFlags &= ~0x02;
+            exp_markDialogPlayed(DIALOG_24_000);
             break;
         case 1:
             func_800E4578_8A9D98(text_box, pester_dialog, 0, true);
-            gDialogFlags &= ~0x04;
+            exp_markDialogPlayed(DIALOG_72_500);
             break;
         case 2:
             func_800E4578_8A9D98(text_box, flute_dialog, 0, true);
-            gDialogFlags &= ~0x08;
+            exp_markDialogPlayed(DIALOG_130_000);
             break;
     }
 
@@ -863,25 +880,25 @@ void exp_oaksLabCourseUnlockDialog(void) {
     UIElement* text_box;
     text_box = func_800E1B40_8A7360();
 
-    if ((gDialogFlags & 0x10) != 0) {
+    if (exp_dialogShouldPlay(DIALOG_COUNT_6)) {
         func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
-        gDialogFlags &= ~0x10;
+        exp_markDialogPlayed(DIALOG_COUNT_6);
 
         auPlaySound(0x4D);
         func_800E1D68_8A7588(0);
     }
 
-    if ((gDialogFlags & 0x20) != 0) {
+    if (exp_dialogShouldPlay(DIALOG_COUNT_22)) {
         func_800E4578_8A9D98(text_box, pokemon_dialog_22, 0, true);
-        gDialogFlags &= ~0x20;
+        exp_markDialogPlayed(DIALOG_COUNT_22);
 
         auPlaySound(0x4D);
         func_800E1D68_8A7588(0);
     } 
 
-    if ((gDialogFlags & 0x40) != 0) {
+    if (exp_dialogShouldPlay(DIALOG_COUNT_40)) {
         func_800E4578_8A9D98(text_box, pokemon_dialog_40, 0, true);
-        gDialogFlags &= ~0x40;
+        exp_markDialogPlayed(DIALOG_COUNT_40);
 
         auPlaySound(0x4D);
         func_800E1D68_8A7588(0);
