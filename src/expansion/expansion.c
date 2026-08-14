@@ -795,19 +795,8 @@ void exp_oaksLabCourseUnlockDialog(void) {
         0x00000000,
     };
 
-    char* error_dialog[] = {
-        "\\w\\1Take \\M\\7this error-shaped\\t\n\\hERROR ITEM\\p.",
-        "If you see this message,\nplease \\hreport it\\p.",
-        0x00000000,
-    };
-
     UIElement* text_box;
     text_box = func_800E1B40_8A7360();
-    
-    if ((gDialogFlags & (0x40 | 0x20 | 0x10)) == 0) {
-        func_800E4578_8A9D98(text_box, error_dialog, 0, true);
-        return;
-    }
 
     if ((gDialogFlags & 0x10) != 0) {
         func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
