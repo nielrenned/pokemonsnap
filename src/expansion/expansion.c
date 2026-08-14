@@ -779,50 +779,6 @@ s32 exp_skipSplitPathDialog(void) {
 
 extern s32 D_80206B50_9CC370;
 
-void exp_oaksLabCourseUnlockDialog(void) {
-    char* pokemon_dialog_6[] = {
-        "\\t\\1You snapped 6 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
-        0x00000000,
-    };
-
-    char* pokemon_dialog_22[] = {
-        "\\t\\1You snapped 22 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
-        0x00000000,
-    };
-
-    char* pokemon_dialog_40[] = {
-        "\\t\\1You snapped 40 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
-        0x00000000,
-    };
-
-    UIElement* text_box;
-    text_box = func_800E1B40_8A7360();
-
-    if ((gDialogFlags & 0x10) != 0) {
-        func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
-        gDialogFlags &= ~0x10;
-
-        auPlaySound(0x4D);
-        func_800E1D68_8A7588(0);
-    }
-
-    if ((gDialogFlags & 0x20) != 0) {
-        func_800E4578_8A9D98(text_box, pokemon_dialog_22, 0, true);
-        gDialogFlags &= ~0x20;
-
-        auPlaySound(0x4D);
-        func_800E1D68_8A7588(0);
-    } 
-
-    if ((gDialogFlags & 0x40) != 0) {
-        func_800E4578_8A9D98(text_box, pokemon_dialog_40, 0, true);
-        gDialogFlags &= ~0x40;
-
-        auPlaySound(0x4D);
-        func_800E1D68_8A7588(0);
-    }
-}
-
 extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
 
 // Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
@@ -886,6 +842,50 @@ void exp_itemDialog(s32 arg0) {
 
     auPlaySound(0x4D);
     func_800E1D68_8A7588(0);
+}
+
+void exp_oaksLabCourseUnlockDialog(void) {
+    char* pokemon_dialog_6[] = {
+        "\\t\\1You snapped 6 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_22[] = {
+        "\\t\\1You snapped 22 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_40[] = {
+        "\\t\\1You snapped 40 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    UIElement* text_box;
+    text_box = func_800E1B40_8A7360();
+
+    if ((gDialogFlags & 0x10) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
+        gDialogFlags &= ~0x10;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
+
+    if ((gDialogFlags & 0x20) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_22, 0, true);
+        gDialogFlags &= ~0x20;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    } 
+
+    if ((gDialogFlags & 0x40) != 0) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_40, 0, true);
+        gDialogFlags &= ~0x40;
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
 }
 
 // Skips the "new course" unlock animation by replacing the 
