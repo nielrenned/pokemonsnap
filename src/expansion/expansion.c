@@ -842,7 +842,7 @@ void exp_labPreDialogHook(void) {
         func_800AAED0(0x200); // Set the flag to run the flute dialog
     }
 
-    if ((gDialogFlags & 0x10) != 0 || (gDialogFlags & 0x20) != 0 || (gDialogFlags & 0x40) != 0) {
+    if ((gDialogFlags & (0x10 | 0x20 | 0x40)) != 0) {
         D_80206B50_9CC370 = 0;
         func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
     }
