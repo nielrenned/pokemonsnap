@@ -976,3 +976,98 @@ u8 icon_archipelago_logo[] = {
 Bitmap D_80141F38_907758[] = {
     { 42, 44, 0, 0, icon_archipelago_logo, 42, 0 },
 };
+
+extern UnkStruct800BEDF8 D_800BEDF8[4];
+extern UnkStruct800BEDF8* D_800BEE98;
+extern s32 D_800AF3A0;
+extern s32 D_800AF3B8;
+extern u64 D_800AF3B0;
+
+extern struct {
+    /* 0x0 */ u8 stickX;
+    /* 0x1 */ u8 stickY;
+    /* 0x2 */ u16 buttons;
+    /* 0x4 */ s32 unk_04;
+} D_800BEDF0;
+
+extern s32 func_800AA28C(s32, s32);
+
+UnkStruct800BEDF8* exp_stickCheck(s32 arg0) {
+    UnkStruct800BEDF8* ptr;
+    ControllerInput* contInput;
+    u32 buttons;
+    s32 i;
+
+    if (arg0 < 0 || arg0 > 3) {
+        return &D_800BEDF8[0];
+    }
+
+    if (D_800AF3A0) {
+        return &D_800BEDF8[arg0];
+    }
+
+    ptr = D_800BEDF8;
+    for (i = 0; i < 4; ptr++, i++) {
+        contInput = &gContInput[i];
+
+        if (D_800AF3B8 == 1 && i == 0) {
+            contInput->stickX = D_800BEDF0.stickX;
+            contInput->stickY = D_800BEDF0.stickY;
+            contInput->buttons = D_800BEDF0.buttons;
+        }
+
+        ptr->stickX = (f32) contInput->stickX / 80.0;
+        ptr->stickY = (f32) contInput->stickY / 80.0;
+        ptr->unk_10 = 0.0f;
+
+        if (ptr->stickX > 1.0) {
+            ptr->stickX = 1.0f;
+        } else if (ptr->stickX < -1.0) {
+            ptr->stickX = -1.0f;
+        }
+        if (ptr->stickY > 1.0) {
+            ptr->stickY = 1.0f;
+        } else if (ptr->stickY < -1.0) {
+            ptr->stickY = -1.0f;
+        }
+
+        buttons = contInput->buttons;
+        if (ptr->stickX > 0.3) {
+            buttons |= STICK_SLOW_RIGHT;
+        } else if (ptr->stickX < -0.3) {
+            buttons |= STICK_SLOW_LEFT;
+        }
+        if (ptr->stickY > 0.3) {
+            buttons |= STICK_SLOW_UP;
+        } else if (ptr->stickY < -0.3) {
+            buttons |= STICK_SLOW_DOWN;
+        }
+        if (ptr->stickX > 0.7) {
+            buttons |= STICK_RIGHT;
+        } else if (ptr->stickX < -0.7) {
+            buttons |= STICK_LEFT;
+        }
+        if (ptr->stickY > 0.7) {
+            buttons |= STICK_UP;
+        } else if (ptr->stickY < -0.7) {
+            buttons |= STICK_DOWN;
+        }
+
+        // Accept d-pad as directional input as well
+        if (contInput->buttons & U_JPAD) buttons |= (STICK_SLOW_UP    | STICK_UP);
+        if (contInput->buttons & D_JPAD) buttons |= (STICK_SLOW_DOWN  | STICK_DOWN);
+        if (contInput->buttons & L_JPAD) buttons |= (STICK_SLOW_LEFT  | STICK_LEFT);
+        if (contInput->buttons & R_JPAD) buttons |= (STICK_SLOW_RIGHT | STICK_RIGHT);
+
+        ptr->currentButtons = func_800AA28C(buttons, i);
+        ptr->pressedButtons = ptr->notPressedButtons & ptr->currentButtons;
+        ptr->releasedButtons = ~(ptr->notPressedButtons | ptr->currentButtons);
+        ptr->notPressedButtons = ~(ptr->currentButtons);
+        // ptr->unk_00 = D_800AF3B0;
+        D_800AF3A0 = true;
+    }
+
+    D_800BEE98 = ptr;
+    // D_800AF3B0++;
+    return &D_800BEDF8[arg0];
+}

@@ -11,6 +11,9 @@ call:func_800C042C_5D2CC+0x18c = exp_createFreshSave
 # Independent per-item use, gated on canUse flags
 handleItemButtonsPress = exp_handleItemButtonsPress
 
+# Hook the function that checks the stick movement
+func_800AA38C = exp_stickCheck
+
 # Icon display follows canUse per-item
 Icons_Init = exp_Icons_Init
 Icons_FinishZoomIn = exp_Icons_FinishZoomIn
