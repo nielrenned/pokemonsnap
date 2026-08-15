@@ -24,6 +24,8 @@ s32 gCourseOverride = 1;
 u32 gCourseUnlockMask = 0;
 u32 gDialogRequestFlags = 0;
 u32 gDialogPlayedFlags = 0;
+u32 gCameraInversionYAMLOption = 0;
+u32 gCameraInversionApplied = 0;
 
 // AP data block, pinned right after the scalar interface (magic initializer
 // forces .data placement so the client address is stable: scores at 0x80400020).
