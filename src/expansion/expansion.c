@@ -71,6 +71,8 @@ extern void Icons_UpdateDefault(GObj*);
 extern void Icons_UpdateDashEngineIcon(GObj*);
 extern void Icons_FinishZoomIn(GObj* arg0);
 extern void Icons_MoveIcon(s32 id, s32 offset);
+extern u32 ProgressFlags;
+extern s8 IsAxisYInverted;
 
 extern UNK_TYPE D_80388F58_529368;
 extern UNK_TYPE D_803890B8_5294C8;
@@ -92,6 +94,8 @@ extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
 extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
+extern u32 gCameraInversionYAMLOption;
+extern u32 gCameraInversionApplied;
 
 #define POKEMON_FOOD  0
 #define PESTER_BALL   1
@@ -99,6 +103,7 @@ extern u32 gDialogPlayedFlags;
 #define DASH_ENGINE   3
 #define SIGN_DETECTOR 4
 #define L_TO_STOP     5
+#define CAMERA_INV    6
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -149,6 +154,16 @@ void exp_handleItemButtonsPress(GObj* obj) {
     s32 apple  = exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple);
     s32 pester = exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall);
     s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
+
+    // Check for camera inversion YAML option, in case it needs to be applied
+    if (!gCameraInversionApplied) {
+        if (gCameraInversionYAMLOption) {
+            ProgressFlags |= PF_INVERTED_Y;
+        }
+        D_800C21B0_5F050->data.invertedY = gCameraInversionYAMLOption;
+        IsAxisYInverted = gCameraInversionYAMLOption;
+        gCameraInversionApplied = 1;
+    }
 
     // We need to update IsDashEngineAvailable here. Otherwise, the icons do
     // appear, but the dash engine is unusable. Idk why there are two different
