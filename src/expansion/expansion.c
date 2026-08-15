@@ -81,6 +81,8 @@ extern SObj* D_803B0A18_550E28;
 extern SObj* D_803B0A1C_550E2C;
 extern s32 func_8009BC68(void);
 
+extern s32 IsCartStopped;
+
 // Client interface block (defined in iface.c, pinned at 0x80400000).
 extern u32 gExpansionMagic;
 extern s32 gMaxFilm;
@@ -90,6 +92,13 @@ extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
 extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
+
+#define POKEMON_FOOD  0
+#define PESTER_BALL   1
+#define POKE_FLUTE    2
+#define DASH_ENGINE   3
+#define SIGN_DETECTOR 4
+#define L_TO_STOP     5
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -120,11 +129,11 @@ s32 exp_rank6(void) {
 // Drives the dash engine's availability (icon + R-trigger boost) off canUse,
 // via the single checkPlayerFlag(DASH) call in initUI that builds ProgressFlags.
 s32 exp_dashAvailable(void) {
-    return exp_canUse(3, D_800C21B0_5F050->data.canUseDashEngine);
+    return exp_canUse(DASH_ENGINE, D_800C21B0_5F050->data.canUseDashEngine);
 }
 
 s32 exp_hasSignDetector(void) {
-    return exp_canUse(4, D_800C21B0_5F050->data.canUseSignDetector);
+    return exp_canUse(SIGN_DETECTOR, D_800C21B0_5F050->data.canUseSignDetector);
 }
 
 // Replaces the func_800BF864_5C704() (Pokedex count) call in initUI that gates
@@ -137,9 +146,9 @@ s32 exp_tutorialDone(void) {
 
 void exp_handleItemButtonsPress(GObj* obj) {
     // This runs every frame while in-course, so we'll add the check for the items here
-    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
-    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
-    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
+    s32 apple  = exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
 
     // We need to update IsDashEngineAvailable here. Otherwise, the icons do
     // appear, but the dash engine is unusable. Idk why there are two different
@@ -170,15 +179,19 @@ void exp_handleItemButtonsPress(GObj* obj) {
     
 
     if (!IsInputDisabled) {
+        if ((gContInputPressedButtons & L_TRIG) && exp_canUse(L_TO_STOP, D_800C21B0_5F050->data.canUseLToStop)) {
+            IsCartStopped = !IsCartStopped;
+        }
+
         if ((gContInputPressedButtons & D_CBUTTONS) &&
-            exp_canUse(2, D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
+            exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
             LastItemId = ITEM_ID_POKEFLUTE;
             PressPokeFluteTimeout = 45;
             Icons_ProcessButtonPress(ITEM_ID_POKEFLUTE);
             Items_PlayPokeFlute();
         } else if (ThrowItemTimeout == 0) {
             if ((gContInputPressedButtons & B_BUTTON) &&
-                exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall)) {
+                exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall)) {
                 LastItemId = ITEM_ID_PESTER_BALL;
                 ThrowItemTimeout = 45;
                 Items_SpawnPesterBall(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
@@ -187,7 +200,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
                 Icons_ProcessButtonPress(-1);
                 PressPokeFluteTimeout = 0;
             } else if ((gContInputPressedButtons & A_BUTTON) &&
-                       exp_canUse(0, D_800C21B0_5F050->data.canUseApple)) {
+                       exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple)) {
                 LastItemId = ITEM_ID_APPLE;
                 ThrowItemTimeout = 45;
                 Items_SpawnApple(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
@@ -249,9 +262,9 @@ void exp_Icons_Init(void) {
     u32 progressFlags;
     SpriteStruct* spr;
     SpriteDefStruct* sprDef;
-    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
-    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
-    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
+    s32 apple  = exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
 
     progressFlags = getProgressFlags();
     Icons_ItemFlags = PF_HAS_APPLE | PF_HAS_PESTER_BALL | PF_HAS_FLUTE;
@@ -388,10 +401,10 @@ void exp_Icons_FinishZoomOut(GObj* arg0) {
     s32 i;
     s32 isMoving;
     
-    s32 apple = exp_canUse(0, D_800C21B0_5F050->data.canUseApple);
-    s32 pester = exp_canUse(1, D_800C21B0_5F050->data.canUsePesterBall);
-    s32 flute = exp_canUse(2, D_800C21B0_5F050->data.canUseFlute);
-    s32 dash = exp_dashAvailable();
+    s32 apple  = exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple);
+    s32 pester = exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall);
+    s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
+    s32 dash   = exp_dashAvailable();
 
     for (i = 0; i < ARRAY_COUNT(Icons_IconDefs); i++) {
         // Since the icons are always initialized, we need to skip re-enabling

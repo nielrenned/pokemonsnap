@@ -60,6 +60,7 @@ typedef struct UnkBigBoy {
         /* ----- */ u32 canUseFlute : 1;
         /* ----- */ u32 canUseDashEngine : 1;
         /* ----- */ u32 canUseSignDetector : 1;
+        /* ----- */ u32 canUseLToStop : 1;
         /* ----- */ u32 courseBeach : 1;
         /* ----- */ u32 courseTunnel : 1;
         /* ----- */ u32 courseVolcano : 1;
@@ -67,7 +68,7 @@ typedef struct UnkBigBoy {
         /* ----- */ u32 courseRiver : 1;
         /* ----- */ u32 courseValley : 1;
         /* ----- */ u32 courseRainbow : 1;
-        /* ----- */ u32 unk_68_14 : 15;
+        /* ----- */ u32 unk_68_14 : 14;
         /* 0x06C */ s32 unk_6C[69];
         /* 0x180 */ PhotoData unk_180[69];
         /* 0xFBA0 */ PhotoData unk_FBA0[4];
