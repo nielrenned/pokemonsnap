@@ -22,6 +22,9 @@ extern s32 PressPokeFluteTimeout;
 extern s32 LastItemId;
 extern Vec3f PlayerVelocity;
 extern s8 IsDashEngineAvailable;
+extern s32 D_800E1500_7E3A0;
+extern s32 D_80206B50_9CC370;
+extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
 
 // Mirrors of icons.c-local types used by Icons_Init.
 enum IconSpriteIds {
@@ -85,7 +88,8 @@ extern s32 gCanUseOverride;
 extern u32 gCanUseMask;
 extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
-extern u32 gDialogFlags;
+extern u32 gDialogRequestFlags;
+extern u32 gDialogPlayedFlags;
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -97,6 +101,8 @@ void expansion_init(void) {
 
 void exp_createFreshSave(void) {
     D_800C21B0_5F050->data.invertedY = 1; // Set the default camera movement to Normal
+    D_800C21B0_5F050->data.unk_64_08 = 1; // Skip the pokemon report dialog (and enable the report)
+    D_800C21B0_5F050->data.unk_64_09 = 1; // Skip the pokemon album dialog (and enable the album)
     func_800BF1F0_5C090();
 }
 
@@ -740,16 +746,17 @@ s32 exp_registerPhoto(Photo* photo) {
     slot = getSpeciesSlot(photo->pkmnID, photo->unk_0->levelID);
 
     if (0 <= slot && slot < ARRAY_COUNT(gApData.speciesScores)) {
-        // TODO: right now, we're saving the max of each score part
-        // separately. But we should probably only overwrite the scores
-        // if the total is higher.
         ApSpeciesScore* score = &gApData.speciesScores[slot];
-
+        
+        // We'll update everything as a way to keep track of what types
+        // of photos we've taken, along with total score.
+        // Eventually this could be reduced to bit flags, if needed.
         score->specialScore  = max(score->specialScore, photo->specialBonus);
         score->poseScore     = max(score->poseScore, photo->posePts);
         score->sizeScore     = max(score->sizeScore, photo->proximityScore);
         score->isWellFramed  = photo->isWellFramed;
         score->samePkmnBonus = max(score->samePkmnBonus, photo->samePkmnBonus);
+        score->totalScore    = max(score->totalScore, photo->totalScore);
             
         if (photo->specialID > 0) {
             score->specialPoseFlags |= (1 << (photo->specialID - 1));
@@ -759,26 +766,143 @@ s32 exp_registerPhoto(Photo* photo) {
     return ret;
 }
 
-// Hooks the function call that runs the "You found all pokemon sign pics" dialog.
-// We should return 6 if we want the sign pics dialog to run, and 0 otherwise.
-s32 exp_runSignPicDialog(void) {
-    if ((gDialogFlags & 1) != 0) {
-        gDialogFlags &= ~1;
-        return 6;
-    }
-    return 0;
+#define DIALOG_RAINBOW_CLOUD 0x0001
+
+#define DIALOG_24_000        0x0002
+#define DIALOG_72_500        0x0004
+#define DIALOG_130_000       0x0008
+
+#define DIALOG_COUNT_6       0x0010
+#define DIALOG_COUNT_22      0x0020
+#define DIALOG_COUNT_40      0x0040
+
+bool exp_dialogShouldPlay(u32 dialog_flag) {
+    return ((gDialogRequestFlags & dialog_flag) != 0) && ((gDialogPlayedFlags & dialog_flag) == 0);
 }
 
-extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
+void exp_markDialogPlayed(u32 dialog_flag) {
+    gDialogPlayedFlags |= dialog_flag;
+}
 
 // Wraps the single func_800E5298_8AAAB8() call inside func_800E2C0C_8A842C,
 // right before Oak's Lab's "found a split in the path" dispatcher runs.
 void exp_labPreDialogHook(void) {
     setLevelId(-1);
-    if ((gDialogFlags & 1) != 0) {
+    if (exp_dialogShouldPlay(DIALOG_RAINBOW_CLOUD)) {
         func_800AAED0(0x400); // Set the flag to run the "you found all six sign pics dialog"
     }
+    if (exp_dialogShouldPlay(DIALOG_24_000)) {
+        func_800AAED0(0x80); // Set the flag to run the 24k dialog (Pokemon Food)
+    }
+    if (exp_dialogShouldPlay(DIALOG_72_500)) {
+        func_800AAED0(0x100); // Set the flag to run the 72.5k dialog (Pester Ball)
+    }
+    if (exp_dialogShouldPlay(DIALOG_130_000)) {
+        func_800AAED0(0x200); // Set the flag to run the 130k dialog (PokeFlute)
+    }
+
+    if (exp_dialogShouldPlay(DIALOG_COUNT_6) || exp_dialogShouldPlay(DIALOG_COUNT_22) || exp_dialogShouldPlay(DIALOG_COUNT_40)) {
+        D_80206B50_9CC370 = 0;
+        func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
+    }
     func_800E5298_8AAAB8();
+}
+
+// Hooks the function call that runs the "You found all pokemon sign pics" dialog.
+// We should return 6 if we want the sign pics dialog to run, and 0 otherwise.
+s32 exp_runSignPicDialog(void) {
+    if (exp_dialogShouldPlay(DIALOG_RAINBOW_CLOUD)) {
+        exp_markDialogPlayed(DIALOG_RAINBOW_CLOUD);
+        return 6;
+    }
+    return 0;
+}
+
+s32 exp_skipSplitPathDialog(void) {
+    return 0;
+}
+
+void exp_itemDialog(s32 arg0) {
+    char* apple_dialog[] = {
+        "\\t\\1Your PKMN Report score\nsurpassed 24,000!",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+    char* pester_dialog[] = {
+        "\\t\\1Your PKMN Report score\nsurpassed 72,500!",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+    char* flute_dialog[] = {
+        "\\t\\1Your PKMN Report score\nsurpassed 130,000!",
+        "\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    UIElement* text_box;
+    text_box = func_800E1B40_8A7360();
+
+    switch (arg0) {
+        case 0:
+            func_800E4578_8A9D98(text_box, apple_dialog, 0, true);
+            exp_markDialogPlayed(DIALOG_24_000);
+            break;
+        case 1:
+            func_800E4578_8A9D98(text_box, pester_dialog, 0, true);
+            exp_markDialogPlayed(DIALOG_72_500);
+            break;
+        case 2:
+            func_800E4578_8A9D98(text_box, flute_dialog, 0, true);
+            exp_markDialogPlayed(DIALOG_130_000);
+            break;
+    }
+
+    auPlaySound(0x4D);
+    func_800E1D68_8A7588(0);
+}
+
+void exp_oaksLabCourseUnlockDialog(void) {
+    char* pokemon_dialog_6[] = {
+        "\\t\\1You snapped 6 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_22[] = {
+        "\\t\\1You snapped 22 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    char* pokemon_dialog_40[] = {
+        "\\t\\1You snapped 40 Pokεmon!\n\\w\\M\\7Take this \\hARCHIPELAGO ITEM\\p.",
+        0x00000000,
+    };
+
+    UIElement* text_box;
+    text_box = func_800E1B40_8A7360();
+
+    if (exp_dialogShouldPlay(DIALOG_COUNT_6)) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_6, 0, true);
+        exp_markDialogPlayed(DIALOG_COUNT_6);
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
+
+    if (exp_dialogShouldPlay(DIALOG_COUNT_22)) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_22, 0, true);
+        exp_markDialogPlayed(DIALOG_COUNT_22);
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    } 
+
+    if (exp_dialogShouldPlay(DIALOG_COUNT_40)) {
+        func_800E4578_8A9D98(text_box, pokemon_dialog_40, 0, true);
+        exp_markDialogPlayed(DIALOG_COUNT_40);
+
+        auPlaySound(0x4D);
+        func_800E1D68_8A7588(0);
+    }
 }
 
 // Skips the "new course" unlock animation by replacing the 
@@ -815,3 +939,12 @@ void exp_secretExitTaken(GObj* obj) {
     EndLevelCb(END_LEVEL_REASON_SECRET_EXIT);
     omEndProcess(NULL);
 }
+
+// Replace the apple bitmap in Oak's Lab with the Archipelago icon
+u8 icon_archipelago_logo[] = {
+#include "icon_archipelago_logo.png.bin.c"
+};
+
+Bitmap D_80141F38_907758[] = {
+    { 42, 44, 0, 0, icon_archipelago_logo, 42, 0 },
+};

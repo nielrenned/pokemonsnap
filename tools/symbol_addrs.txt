@@ -8642,3 +8642,7 @@ fx_createEffect = 0x800A6C48; // segment:app_render
 fx_effectProcDefault = 0x800BE2A8; // segment:app_render
 fx_ejectEffectDObj = 0x800A716C; // segment:app_render
 
+// We're replacing the apple sprite data in expansion.c
+// so we need to tell splat to call this something different
+// so that the linker doesn't complain about duplicate symbols
+D_80141F38_907758_orig = 0x80141F38; // segment:oaks_lab

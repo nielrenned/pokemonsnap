@@ -13,6 +13,7 @@ typedef struct ApSpeciesScore {
     s16 isWellFramed;
     s16 samePkmnBonus;
     s16 specialPoseFlags;
+    s16 totalScore; // photo total is u32, but it will fit in an s16 
 } ApSpeciesScore;
 
 struct ApData_s {
@@ -28,7 +29,7 @@ struct ApData_s {
 // to 0x80-sized pages so flash read/write never overruns the buffer.
 typedef union {
     struct ApData_s;
-    u8 padding[0x400];
+    u8 padding[0x480];
 } ApData;
 
 extern ApData gApData;

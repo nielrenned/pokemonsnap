@@ -62,13 +62,14 @@ def main():
         "gCourseOverride": (s["gCourseOverride"], "s32", "rw", "!=0: all courses unlocked"),
         "gCourseUnlockMask": (s["gCourseUnlockMask"], "u32", "rw",
                               "bit0=Beach,1=Tunnel,2=Volcano,3=Cave,4=River,5=Valley,6=Rainbow (used when gCourseOverride==0)"),
-        "gDialogFlags": (s["gDialogFlags"], "u32", "rw", "bit0=Cloud Dialog"),
+        "gDialogRequestFlags": (s["gDialogRequestFlags"], "u32", "rw", "Dialog flags: bit0=Cloud, 1=Apple, 2=Pester, 3=Flute, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon"),
+        "gDialogPlayedFlags": (s["gDialogPlayedFlags"], "u32", "rw", "Dialog flags: bit0=Cloud, 1=Apple, 2=Pester, 3=Flute, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon"),
         "apMagic": (ap + 0x00, "u32", "r", "0x53414431 'SAD1' when the AP block is valid"),
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
-        "speciesScores": (ap + 0x08, "s16[73][6]", "r",
-                          "[slot][0=special, 1=pose, 2=size, 3=technique, 4=samePkmn, 5=poseFlags]; slot=getSpeciesSlot(pokemonID, levelID)"),
-        "signsFound": (ap + 0x08 + 73 * 2 * 6, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
-        "secretExits": (ap + 0x08 + 73 * 2 * 6 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
+        "speciesScores": (ap + 0x08, "s16[73][7]", "r",
+                          "[slot][0=special, 1=pose, 2=size, 3=technique, 4=samePkmn, 5=poseFlags, 6=totalScore]; slot=getSpeciesSlot(pokemonID, levelID)"),
+        "signsFound": (ap + 0x08 + 73 * 2 * 7, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
+        "secretExits": (ap + 0x08 + 73 * 2 * 7 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
     }
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.

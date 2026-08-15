@@ -40,6 +40,16 @@ call:func_800E3ED4_8A96F4+0x500 = exp_courseConfirmFocus
 # Hook the Oak's Lab Sign pic dialog check
 call:func_800E5298_8AAAB8+0x1f0 = exp_runSignPicDialog
 
+# Hook the Oak's Lab split-path dialog check
+call:func_800E5298_8AAAB8+0x218 = exp_skipSplitPathDialog
+call:func_800E5298_8AAAB8+0x22c = exp_skipSplitPathDialog
+
+# Hook the Oak's Lab new item dialog check
+func_800E4E28_8AA648 = exp_itemDialog
+
+# Hook the Oak's Lab new course dialog
+func_800E4CCC_8AA4EC = exp_oaksLabCourseUnlockDialog
+
 # Hook the function that run's the dialog upon return to oak's lab
 call:func_800E2C0C_8A842C+0x334 = exp_labPreDialogHook
 
