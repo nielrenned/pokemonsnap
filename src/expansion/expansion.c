@@ -156,12 +156,14 @@ void exp_handleItemButtonsPress(GObj* obj) {
     s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
 
     // Check for camera inversion YAML option, in case it needs to be applied
-    if (!gCameraInversionApplied) {
-        if (gCameraInversionYAMLOption) {
+    // AND with 0x02 to check that the client did actually write to this field
+    if (!gCameraInversionApplied && (gCameraInversionYAMLOption & 0x02)) {
+        u32 cameraInversionValue = (gCameraInversionYAMLOption & 0x01);
+        if (cameraInversionValue) {
             ProgressFlags |= PF_INVERTED_Y;
         }
-        D_800C21B0_5F050->data.invertedY = gCameraInversionYAMLOption;
-        IsAxisYInverted = gCameraInversionYAMLOption;
+        D_800C21B0_5F050->data.invertedY = cameraInversionValue;
+        IsAxisYInverted = cameraInversionValue;
         gCameraInversionApplied = 1;
     }
 
