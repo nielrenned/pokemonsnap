@@ -12,12 +12,14 @@
 #define AP_FLASH_PAGE ((s32) ((sizeof(UnkBigBoy) + 0x7F) / 0x80))
 
 // exp_canUse bit indexes
-#define POKEMON_FOOD  0
-#define PESTER_BALL   1
-#define POKE_FLUTE    2
-#define DASH_ENGINE   3
-#define SIGN_DETECTOR 4
-#define L_TO_STOP     5
+#define POKEMON_FOOD   0
+#define PESTER_BALL    1
+#define POKE_FLUTE     2
+#define DASH_ENGINE    3
+#define SIGN_DETECTOR  4
+#define L_TO_STOP      5
+#define WONDERFUL_LENS 6
+#define MULTIPLE_LENS  7
 
 // dialog flag bits
 #define DIALOG_RAINBOW_CLOUD 0x0001
@@ -96,6 +98,10 @@ extern s32 func_800BFC5C_5CAFC(void); // Rank
 extern s32 func_800C0290_5D130(void);
 extern s32 func_800E3264_8A8A84(void*, s32*);
 
+extern f32 func_8009BDDC(s16, s8);
+extern f32 score_Interpolate(f32 value, f32 xmin, f32 xmax, f32 ymin, f32 ymax);
+extern void score_AddSamePkmnBonus(ScoreData* score, PhotoData* photo, s32 idx, s32 thisPokemon);
+
 /**********************
  ** Extern variables ** 
  **********************/
@@ -163,6 +169,18 @@ extern SObj* Pause_ContinueSelected;
 extern SObj* Pause_Retry;
 extern SObj* Pause_RetrySelected;
 
+extern s32 photo_PokemonIndexes[12];
+
+extern s16 D_800AE744[64];
+extern s16 D_800AE6E4[4][12];
+
+extern u16 score_PokemonCount;
+extern s16 score_PoseBonuses[164];
+extern s16 score_SpecialBonuses[14];
+extern s32 score_PixelCountUnobstructed[12];
+extern s32 score_PixelCountUnobstructedInCenter[12];
+extern s32 score_ApproxTotalPixelCount[12];
+extern s32 score_PixelCountInCenter[12];
 
 // Client interface block (defined in iface.c, pinned at 0x80400000).
 extern u32 gExpansionMagic;
@@ -1166,5 +1184,119 @@ void exp_Pause_UpdateSelection(GObj* obj) {
     }
     if (!IsPaused) {
         omEndProcess(NULL);
+    }
+}
+
+void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
+    s32 pkmnID;
+    s32 visiblePixels;
+    f32 visiblePixelScore;
+    f32 visiblePart;
+    s32 i;
+    s32 specialID;
+    f32 f22;
+    s32 tmp2;
+    s32 idx;
+    s32 tmp4;
+    s32 roundedSizeScore;
+    s32 poseID;
+    f32 sizeScore;
+    f32 tmp7;
+    f32 tmp8;
+
+    score->totalScore = 0;
+
+    idx = photo_PokemonIndexes[id];
+    pkmnID = photo->pokemons[idx].pokemonID;
+    if (pkmnID == PokemonID_603) {
+        score->pokemonInFocus = PokemonID_SHELLDER;
+    } else {
+        score->pokemonInFocus = pkmnID;
+    }
+
+    if (func_8009BDDC(photo->pokemons[idx].pokemonID, photo->pokemons[idx].unk_00_13) < 0.0f) {
+        score->pokemonInFocus = PokemonID_500;
+        return;
+    }
+
+    specialID = photo->pokemons[idx].specialID;
+    if (specialID > 0) {
+        score->specialID = specialID;
+        score->specialBonus = score_SpecialBonuses[specialID];
+        score->totalScore += score->specialBonus;
+    }
+
+    visiblePixels = score_PixelCountUnobstructed[id];
+    if (visiblePixels > 768) {
+        visiblePixels = 768;
+    }
+    if (visiblePixels < 4) {
+        return;
+    }
+
+    visiblePixelScore = score_Interpolate(visiblePixels, 4.0f, 768.0f, 0.2f, 1.0f);
+    score->proximityScore = ((u16) ((visiblePixelScore * 1000.0f + 5.0f) / 10.0f)) * 10;
+
+    if (visiblePixels < 4 || score_ApproxTotalPixelCount[id] <= 0) {
+        return;
+    }
+
+    visiblePart = (f32) score_PixelCountUnobstructed[id] / (f32) score_ApproxTotalPixelCount[id];
+    if (visiblePart > 1.0) {
+        visiblePart = 1.0f;
+    }
+
+    score->completenessScore = visiblePart * 10000.0f + 0.5f;
+    tmp8 = score->proximityScore;
+    visiblePart = score->completenessScore / 10000.f;
+    sizeScore = visiblePart * tmp8;
+    roundedSizeScore = ((u16) ((sizeScore + 5.0f) / 10.0f)) * 10;
+    score->totalScore += roundedSizeScore;
+
+    if (visiblePixelScore < 0.245f || visiblePart < 0.6f) {
+        return;
+    }
+
+    poseID = photo->pokemons[idx].poseID;
+    score->poseID = poseID;
+    if (poseID > 0) {
+        score->posePts = score_PoseBonuses[poseID];
+        score->totalScore += score->posePts;
+        if (score->posePts < 200) {
+            return;
+        }
+    } else {
+        f22 = photo->pokemons[idx].yaw - atan2f(photo->unk_08.x - photo->unk_14.x, photo->unk_08.z - photo->unk_14.z);
+        while (f22 > PI) {
+            f22 -= TAU;
+        }
+        while (f22 < -PI) {
+            f22 += TAU;
+        }
+        if (f22 < 0.0f) {
+            f22 = -f22;
+        }
+
+        tmp4 = D_800AE744[func_8009BB4C(pkmnID)];
+        tmp2 = f22 * 180.0f / PI / 15.0f;
+        score->posePts = D_800AE6E4[tmp4][tmp2];
+        score->totalScore += score->posePts;
+        if (score->posePts < 200) {
+            return;
+        }
+    }
+
+    if (score_PixelCountInCenter[id] != 0 && exp_canUse(WONDERFUL_LENS, 0)) {
+        score->isWellFramed = true;
+        score->totalScore *= 2;
+    }
+
+    if (exp_canUse(MULTIPLE_LENS, 0)) {
+        for (i = 0; i < id; i++) {
+            score_AddSamePkmnBonus(score, photo, i, pkmnID);
+        }
+        for (i = id + 1; i < score_PokemonCount; i++) {
+            score_AddSamePkmnBonus(score, photo, i, pkmnID);
+        }
     }
 }
