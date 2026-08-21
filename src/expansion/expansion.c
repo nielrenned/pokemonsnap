@@ -8,25 +8,30 @@
 #include "window/window.h"
 #include "oaks_lab/oaks_lab.h"
 
-extern UnkBigBoy* D_800C21B0_5F050;
-extern s32 func_800C0290_5D130(void);
-extern void func_800E5298_8AAAB8(void); // Oak's Lab "found a split in the path" dispatcher
-extern s32 photocheck_oaksMark(Photo* photo); // The photo scoring UI routine
-extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
-extern void func_800BF1F0_5C090(void); // create fresh save
-extern s32 func_8009BB4C(s32);
-extern OSMesgQueue D_800E17A8_7E648; // flash message queue
-extern s32 IsInputDisabled;
-extern s32 ThrowItemTimeout;
-extern s32 PressPokeFluteTimeout;
-extern s32 LastItemId;
-extern Vec3f PlayerVelocity;
-extern s8 IsDashEngineAvailable;
-extern s32 D_800E1500_7E3A0;
-extern s32 D_80206B50_9CC370;
-extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
+// Page that the AP block lives at in FLASH: right after the main save.
+#define AP_FLASH_PAGE ((s32) ((sizeof(UnkBigBoy) + 0x7F) / 0x80))
 
-// Mirrors of icons.c-local types used by Icons_Init.
+// exp_canUse bit indexes
+#define POKEMON_FOOD  0
+#define PESTER_BALL   1
+#define POKE_FLUTE    2
+#define DASH_ENGINE   3
+#define SIGN_DETECTOR 4
+#define L_TO_STOP     5
+
+// dialog flag bits
+#define DIALOG_RAINBOW_CLOUD 0x0001
+#define DIALOG_24_000        0x0002
+#define DIALOG_72_500        0x0004
+#define DIALOG_130_000       0x0008
+#define DIALOG_COUNT_6       0x0010
+#define DIALOG_COUNT_22      0x0020
+#define DIALOG_COUNT_40      0x0040
+
+
+/*********************************
+ ** Duplicated type definitions ** 
+ *********************************/
 enum IconSpriteIds {
     ICON_ID_APPLE = 0,
     ICON_ID_PESTER_BALL = 1,
@@ -54,6 +59,58 @@ typedef struct SpriteStruct {
     /* 0x0C */ char unused[12];
 } SpriteStruct;
 
+extern struct {
+    /* 0x0 */ u8 stickX;
+    /* 0x1 */ u8 stickY;
+    /* 0x2 */ u16 buttons;
+    /* 0x4 */ s32 unk_04;
+} D_800BEDF0;
+
+/**********************
+ ** Extern functions ** 
+ **********************/
+extern void Icons_FinishZoomIn(GObj* arg0);
+extern void Icons_MoveIcon(s32 id, s32 offset);
+extern void Icons_UpdateDashEngineIcon(GObj*);
+extern void Icons_UpdateDefault(GObj*);
+extern void omEndProcess(GObjProcess* proc);
+extern void score_CalculateScore(ScoreData*, PhotoData*, s32);
+extern void UILayout_CreateButtons(UIButton*);
+extern void func_800AAED0(s32); // Oak's Lab Dialog Flag Setter
+extern void func_800BF1F0_5C090(void); // create fresh save
+extern void func_800E1FEC_8A780C(s32 stage);
+extern void func_800E5298_8AAAB8(void); // Oak's Lab "found a split in the path" dispatcher
+extern void (*EndLevelCb)(s32);
+
+extern s32 photocheck_oaksMark(Photo* photo); // The photo scoring UI routine
+extern s32 func_8009BB4C(s32); // Pokemon ID -> save slot
+extern s32 func_8009BC68(void);
+extern s32 func_800AA28C(s32, s32);
+extern s32 func_800BFC5C_5CAFC(void); // Rank
+extern s32 func_800C0290_5D130(void);
+extern s32 func_800E3264_8A8A84(void*, s32*);
+
+/**********************
+ ** Extern variables ** 
+ **********************/
+extern UnkBigBoy* D_800C21B0_5F050;
+extern OSMesgQueue D_800E17A8_7E648; // flash message queue
+extern s32 IsInputDisabled;
+extern s32 ThrowItemTimeout;
+extern s32 PressPokeFluteTimeout;
+extern s32 LastItemId;
+extern Vec3f PlayerVelocity;
+extern s8 IsDashEngineAvailable;
+extern s32 D_800E1500_7E3A0;
+extern s32 D_80206B50_9CC370;
+extern s32 D_801F3E28_9A3898;
+
+extern UnkStruct800BEDF8 D_800BEDF8[4];
+extern UnkStruct800BEDF8* D_800BEE98;
+extern s32 D_800AF3A0;
+extern s32 D_800AF3B8;
+extern u64 D_800AF3B0;
+
 extern u8 Icons_IsZoomedIn;
 extern s32 Icons_TotalMoveOutFrameCounter;
 extern s32 Icons_MoveOutCounter[8];
@@ -67,12 +124,14 @@ extern u32 D_8038821C_52862C;
 extern s32 D_803AF8BC_54FCCC;
 extern s32 Icons_MoveOutCounter[8];
 extern u8 Icons_ItemFlags;
-extern void Icons_UpdateDefault(GObj*);
-extern void Icons_UpdateDashEngineIcon(GObj*);
-extern void Icons_FinishZoomIn(GObj* arg0);
-extern void Icons_MoveIcon(s32 id, s32 offset);
 extern u32 ProgressFlags;
 extern s8 IsAxisYInverted;
+
+extern UIButton* D_80195CEC_95B50C[];
+
+// While set, every course is selectable regardless of its courseX flag
+// (testing default-on). Clear once an external grantor drives the course flags.
+static UIButton sCourseButtons[12];
 
 extern UNK_TYPE D_80388F58_529368;
 extern UNK_TYPE D_803890B8_5294C8;
@@ -81,7 +140,6 @@ extern UNK_TYPE D_8038A034_52A444[];
 extern SObj* D_803B0A14_550E24;
 extern SObj* D_803B0A18_550E28;
 extern SObj* D_803B0A1C_550E2C;
-extern s32 func_8009BC68(void);
 
 extern s32 IsCartStopped;
 
@@ -97,13 +155,14 @@ extern u32 gDialogPlayedFlags;
 extern u32 gCameraInversionYAMLOption;
 extern u32 gCameraInversionApplied;
 
-#define POKEMON_FOOD  0
-#define PESTER_BALL   1
-#define POKE_FLUTE    2
-#define DASH_ENGINE   3
-#define SIGN_DETECTOR 4
-#define L_TO_STOP     5
-#define CAMERA_INV    6
+/*************************
+ ** Expansion functions ** 
+ *************************/
+
+// Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
+// dispatcher still consumes the one-shot event bit, so it just doesn't display.
+void exp_noop(void) {
+}
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
     return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
@@ -118,11 +177,6 @@ void exp_createFreshSave(void) {
     D_800C21B0_5F050->data.unk_64_08 = 1; // Skip the pokemon report dialog (and enable the report)
     D_800C21B0_5F050->data.unk_64_09 = 1; // Skip the pokemon album dialog (and enable the album)
     func_800BF1F0_5C090();
-}
-
-// Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
-// dispatcher still consumes the one-shot event bit, so it just doesn't display.
-void exp_noop(void) {
 }
 
 // Returns max rank (6) so the course-select text lookup indexes the full
@@ -273,6 +327,9 @@ s32 exp_filmUpdateCounter(void) {
     return value;
 }
 
+// Replaces Icons_Init to enable all the item icons on level start.
+// This way, when an item is received mid-level, trying to show or
+// animate its icon doesn't crash the game.
 void exp_Icons_Init(void) {
     GObj* gobj;
     s32 i;
@@ -471,9 +528,6 @@ void exp_Icons_FinishZoomOut(GObj* arg0) {
     omEndProcess(NULL);
 }
 
-extern s32 D_801F3E28_9A3898;
-extern s32 func_800BFC5C_5CAFC(void);
-
 // Rank-up awards set the "unlocked" flags only; actual item usability is driven
 // by the AP canUse mask. Each tier checks its own flag so a higher-tier item
 // doesn't lock out the lower tiers.
@@ -490,12 +544,11 @@ void exp_awardItems(s32 score) {
     }
 }
 
-static s32 sSkipOakReportBox = 0;
-
 // The report eval shows a second Oak textbox telling the player how many more
 // photos until the next course unlocks (ranks 4/2/0). Courses are AP items now,
 // so that hint is meaningless: redirect those three text prints here to flag the
 // box for skipping (and print nothing, avoiding a one-frame flash of the text).
+static s32 sSkipOakReportBox = 0;
 void exp_skipOakBox(void) {
     sSkipOakReportBox = 1;
 }
@@ -511,13 +564,6 @@ s32 exp_oakReportWait(void* elem, s32 flag) {
 }
 
 #pragma GLOBAL_ASM("src/expansion/award_detour.s")
-
-extern UIButton* D_80195CEC_95B50C[];
-extern void UILayout_CreateButtons(UIButton*);
-
-// While set, every course is selectable regardless of its courseX flag
-// (testing default-on). Clear once an external grantor drives the course flags.
-static UIButton sCourseButtons[12];
 
 static s32 exp_courseUnlocked(s32 level) {
     s32 saved;
@@ -563,8 +609,6 @@ void exp_CreateCourseButtons(UIButton* rankList) {
     UILayout_CreateButtons(sCourseButtons);
 }
 
-extern s32 func_800E3264_8A8A84(void*, s32*);
-
 // The course-select menu seeds/stores the cursor as a level number, but the
 // filtered list is compacted, so level != list index. Map a level to its index
 // in the compacted list (0 if that course isn't present).
@@ -579,8 +623,9 @@ static s32 exp_levelToIndex(s32 level) {
     return 0;
 }
 
-extern void func_800E1FEC_8A780C(s32 stage);
-
+// The level icon is normally determined by the index of the button.
+// But since we're enabling buttons in a weird order, we have to
+// change the logic for selecting the image. 
 void exp_setLevelIcon(s32 index) {
     s32 level = -1;
     if ((0 <= index && index < 12) && 
@@ -611,12 +656,6 @@ void exp_courseConfirmFocus(void* input, s32* level) {
         *level = sCourseButtons[idx].id - 6;
     }
 }
-
-// Wraps score_CalculateScore at its call sites: after the real scoring, record
-// which bonus types this species earned into the persisted save (speciesBonus).
-// Bits: 0=special, 1=pose, 2=size, 3=technique, 4=samePkmn.
-// Page that the AP block lives at in FLASH: right after the main save.
-#define AP_FLASH_PAGE ((s32) ((sizeof(UnkBigBoy) + 0x7F) / 0x80))
 
 static u32 exp_apChecksum(void) {
     u32 sum = 0;
@@ -698,7 +737,7 @@ s32 exp_loadMain(uintptr_t addr, s32 size) {
     return 0;
 }
 
-s16 max(s16 a, s16 b) {
+static s16 max(s16 a, s16 b) {
     return (a > b ? a : b);
 }
 
@@ -787,7 +826,7 @@ s32 exp_registerPhoto(Photo* photo) {
         score->isWellFramed  = photo->isWellFramed;
         score->samePkmnBonus = max(score->samePkmnBonus, photo->samePkmnBonus);
         score->totalScore    = max(score->totalScore, photo->totalScore);
-            
+        
         if (photo->specialID > 0) {
             score->specialPoseFlags |= (1 << (photo->specialID - 1));
         }
@@ -795,16 +834,6 @@ s32 exp_registerPhoto(Photo* photo) {
 
     return ret;
 }
-
-#define DIALOG_RAINBOW_CLOUD 0x0001
-
-#define DIALOG_24_000        0x0002
-#define DIALOG_72_500        0x0004
-#define DIALOG_130_000       0x0008
-
-#define DIALOG_COUNT_6       0x0010
-#define DIALOG_COUNT_22      0x0020
-#define DIALOG_COUNT_40      0x0040
 
 bool exp_dialogShouldPlay(u32 dialog_flag) {
     return ((gDialogRequestFlags & dialog_flag) != 0) && ((gDialogPlayedFlags & dialog_flag) == 0);
@@ -959,9 +988,6 @@ void exp_skipUnlockAnimation(void) {
     }
 }
 
-extern void (*EndLevelCb)(s32);
-extern void omEndProcess(GObjProcess* proc);
-
 void exp_secretExitTaken(GObj* obj) {
     s32 levelID = getLevelId();
     gApData.secretExits |= (1 << levelID);
@@ -978,21 +1004,6 @@ u8 icon_archipelago_logo[] = {
 Bitmap D_80141F38_907758[] = {
     { 42, 44, 0, 0, icon_archipelago_logo, 42, 0 },
 };
-
-extern UnkStruct800BEDF8 D_800BEDF8[4];
-extern UnkStruct800BEDF8* D_800BEE98;
-extern s32 D_800AF3A0;
-extern s32 D_800AF3B8;
-extern u64 D_800AF3B0;
-
-extern struct {
-    /* 0x0 */ u8 stickX;
-    /* 0x1 */ u8 stickY;
-    /* 0x2 */ u16 buttons;
-    /* 0x4 */ s32 unk_04;
-} D_800BEDF0;
-
-extern s32 func_800AA28C(s32, s32);
 
 UnkStruct800BEDF8* exp_stickCheck(s32 arg0) {
     UnkStruct800BEDF8* ptr;
