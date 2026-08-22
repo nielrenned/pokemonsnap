@@ -1303,7 +1303,8 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     }
 }
 
-void exp_skipGoodTechniqueChastising(UIElement* el, char* str) {
+void exp_photocheck_skipGoodTechniqueChastising(UIElement* el, char* str) {
+    // If we can't get good technique yet, don't complain about it
     if (!exp_canUse(TECHNIQUE_SCORE, 0)) return;
     UIElement_PrintText(el, str);
 }
