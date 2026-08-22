@@ -12,14 +12,14 @@
 #define AP_FLASH_PAGE ((s32) ((sizeof(UnkBigBoy) + 0x7F) / 0x80))
 
 // exp_canUse bit indexes
-#define POKEMON_FOOD   0
-#define PESTER_BALL    1
-#define POKE_FLUTE     2
-#define DASH_ENGINE    3
-#define SIGN_DETECTOR  4
-#define L_TO_STOP      5
-#define WONDERFUL_LENS 6
-#define MULTIPLE_LENS  7
+#define POKEMON_FOOD    0
+#define PESTER_BALL     1
+#define POKE_FLUTE      2
+#define DASH_ENGINE     3
+#define SIGN_DETECTOR   4
+#define L_TO_STOP       5
+#define TECHNIQUE_SCORE 6
+#define MULTIPLE_SCORE  7
 
 // dialog flag bits
 #define DIALOG_RAINBOW_CLOUD 0x0001
@@ -1288,12 +1288,12 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
         }
     }
 
-    if (score_PixelCountInCenter[id] != 0 && exp_canUse(WONDERFUL_LENS, 0)) {
+    if (score_PixelCountInCenter[id] != 0 && exp_canUse(TECHNIQUE_SCORE, 0)) {
         score->isWellFramed = true;
         score->totalScore *= 2;
     }
 
-    if (exp_canUse(MULTIPLE_LENS, 0)) {
+    if (exp_canUse(MULTIPLE_SCORE, 0)) {
         for (i = 0; i < id; i++) {
             score_AddSamePkmnBonus(score, photo, i, pkmnID);
         }
@@ -1304,7 +1304,7 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
 }
 
 void exp_skipGoodTechniqueChastising(UIElement* el, char* str) {
-    if (!exp_canUse(WONDERFUL_LENS, 0)) return;
+    if (!exp_canUse(TECHNIQUE_SCORE, 0)) return;
     UIElement_PrintText(el, str);
 }
 
