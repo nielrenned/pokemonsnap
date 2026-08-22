@@ -43,6 +43,12 @@ enum IconSpriteIds {
     ICON_ID_ZOOM_OFF = 7
 };
 
+enum PauseOptions {
+    PAUSE_OPTION_CONTINUE = 0,
+    PAUSE_OPTION_QUIT = 1,
+    PAUSE_OPTION_RETRY = 2
+};
+
 typedef struct SpriteDefStruct {
     /* 0x00 */ u32 x;
     /* 0x04 */ u32 y;
@@ -142,6 +148,21 @@ extern SObj* D_803B0A18_550E28;
 extern SObj* D_803B0A1C_550E2C;
 
 extern s32 IsCartStopped;
+
+extern u16 gContInputCurrentButtons;
+
+extern u8 IsPaused;
+extern u8 PauseButtonPressTimeout;
+extern u8 PauseCurrentSelection;
+extern s32 Pause_StickReleased;
+
+extern SObj* Pause_QuitCourse;
+extern SObj* Pause_QuitCourseSelected;
+extern SObj* Pause_Continue;
+extern SObj* Pause_ContinueSelected;
+extern SObj* Pause_Retry;
+extern SObj* Pause_RetrySelected;
+
 
 // Client interface block (defined in iface.c, pinned at 0x80400000).
 extern u32 gExpansionMagic;
@@ -1083,4 +1104,67 @@ UnkStruct800BEDF8* exp_stickCheck(s32 arg0) {
     D_800BEE98 = ptr;
     // D_800AF3B0++;
     return &D_800BEDF8[arg0];
+}
+
+void exp_Pause_UpdateSelection(GObj* obj) {
+    s32 stickY = gContInputStickY;
+
+    if (gContInputCurrentButtons & U_JPAD)      stickY = 80;
+    else if (gContInputCurrentButtons & D_JPAD) stickY = -80;
+
+    if (PauseButtonPressTimeout > 0) {
+        Pause_StickReleased = false;
+    } else if (ABS(stickY) > 20 && Pause_StickReleased) {
+        Pause_StickReleased = false;
+        if (stickY > 0) {
+            if (PauseCurrentSelection > 0) {
+                PauseCurrentSelection--;
+                auPlaySound(SOUND_ID_65);
+            }
+        } else {
+            if (PauseCurrentSelection < 2) {
+                PauseCurrentSelection++;
+                auPlaySound(SOUND_ID_65);
+            }
+        }
+
+        switch (PauseCurrentSelection) {
+            case PAUSE_OPTION_CONTINUE:
+                spSetAttribute(&Pause_QuitCourseSelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_QuitCourse->sprite, SP_HIDDEN);
+
+                spClearAttribute(&Pause_ContinueSelected->sprite, SP_HIDDEN);
+                spSetAttribute(&Pause_Continue->sprite, SP_HIDDEN);
+
+                spSetAttribute(&Pause_RetrySelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_Retry->sprite, SP_HIDDEN);
+                break;
+            case PAUSE_OPTION_QUIT:
+                spClearAttribute(&Pause_QuitCourseSelected->sprite, SP_HIDDEN);
+                spSetAttribute(&Pause_QuitCourse->sprite, SP_HIDDEN);
+
+                spSetAttribute(&Pause_ContinueSelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_Continue->sprite, SP_HIDDEN);
+
+                spSetAttribute(&Pause_RetrySelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_Retry->sprite, SP_HIDDEN);
+                break;
+            case PAUSE_OPTION_RETRY:
+                spSetAttribute(&Pause_QuitCourseSelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_QuitCourse->sprite, SP_HIDDEN);
+
+                spSetAttribute(&Pause_ContinueSelected->sprite, SP_HIDDEN);
+                spClearAttribute(&Pause_Continue->sprite, SP_HIDDEN);
+
+                spClearAttribute(&Pause_RetrySelected->sprite, SP_HIDDEN);
+                spSetAttribute(&Pause_Retry->sprite, SP_HIDDEN);
+                break;
+        }
+        Pause_StickReleased += 0; // required to match
+    } else if (ABS(stickY) < 5) {
+        Pause_StickReleased = true;
+    }
+    if (!IsPaused) {
+        omEndProcess(NULL);
+    }
 }
