@@ -1044,6 +1044,8 @@ Bitmap D_80141F38_907758[] = {
     { 42, 44, 0, 0, icon_archipelago_logo, 42, 0 },
 };
 
+// Hooking this lets us add d-pad input in most menus,
+// except the pause menu, annoyingly.
 UnkStruct800BEDF8* exp_stickCheck(s32 arg0) {
     UnkStruct800BEDF8* ptr;
     ControllerInput* contInput;
@@ -1299,4 +1301,13 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
             score_AddSamePkmnBonus(score, photo, i, pkmnID);
         }
     }
+}
+
+void exp_skipGoodTechniqueChastising(UIElement* el, char* str) {
+    if (!exp_canUse(WONDERFUL_LENS, 0)) return;
+    UIElement_PrintText(el, str);
+}
+
+s32 exp_autoPressA(UIElement* arg0, s32 arg1) {
+    return A_BUTTON;
 }

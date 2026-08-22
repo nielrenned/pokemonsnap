@@ -1460,7 +1460,7 @@ s32 photocheck_oaksMark(Photo* photo) {
             D_801F3E34_9A38A4 = true;
         }
     }
-    if (!isPokemonSign && !D_801F3E34_9A38A4 && sp204 == 0) {
+    if (!isPokemonSign && !D_801F3E34_9A38A4 && (sp204 == 0 || sp204 == 3)) {
         if (photo->samePkmnNumber != 0 && photo->samePkmnBonus != 0) {
             UIElement_VertScroll(D_802290E0_9D8B50, 12, 0, 0, 0, 260, 59);
             if (D_801F3E60_9A38D0 && sp25C->score.samePkmnBonus != 0) {
