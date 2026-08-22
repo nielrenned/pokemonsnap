@@ -1308,6 +1308,6 @@ void exp_skipGoodTechniqueChastising(UIElement* el, char* str) {
     UIElement_PrintText(el, str);
 }
 
-s32 exp_autoPressA(UIElement* arg0, s32 arg1) {
+s32 exp_photocheck_autoPressA(UIElement* arg0, s32 arg1) {
     return A_BUTTON;
 }
