@@ -11,8 +11,11 @@ call:func_800C042C_5D2CC+0x18c = exp_createFreshSave
 # Independent per-item use, gated on canUse flags
 handleItemButtonsPress = exp_handleItemButtonsPress
 
-# Hook the function that checks the stick movement
+# Hook the function that checks the stick movement in most menus
 func_800AA38C = exp_stickCheck
+
+# Hook the function that checks stick movement in pause menu
+Pause_UpdateSelection = exp_Pause_UpdateSelection
 
 # Icon display follows canUse per-item
 Icons_Init = exp_Icons_Init
