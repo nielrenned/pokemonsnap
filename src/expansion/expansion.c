@@ -20,6 +20,7 @@
 #define L_TO_STOP       5
 #define TECHNIQUE_SCORE 6
 #define MULTIPLE_SCORE  7
+#define MULTIPLE_WO_TECHNIQUE 8
 
 // dialog flag bits
 #define DIALOG_RAINBOW_CLOUD 0x0001
@@ -1293,7 +1294,7 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
         score->totalScore *= 2;
     }
 
-    if (exp_canUse(MULTIPLE_SCORE, 0)) {
+    if (exp_canUse(MULTIPLE_SCORE, 0) && (score->isWellFramed || exp_canUse(MULTIPLE_WO_TECHNIQUE, 0))) {
         for (i = 0; i < id; i++) {
             score_AddSamePkmnBonus(score, photo, i, pkmnID);
         }
