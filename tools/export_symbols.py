@@ -58,7 +58,7 @@ def main():
         "gMaxFilm": (s["gMaxFilm"], "s32", "rw", "film cap (below 60)"),
         "gCanUseOverride": (s["gCanUseOverride"], "s32", "rw", "!=0: all items usable"),
         "gCanUseMask": (s["gCanUseMask"], "u32", "rw",
-                        "bit0=apple, 1=pester, 2=flute, 3=dash, 4=sign detector, 5=press L to stop (used when gCanUseOverride==0)"),
+                        "bit0=apple, 1=pester, 2=flute, 3=dash, 4=sign detector, 5=L to stop, 6=technique scoring, 7=multiple scoring (used when gCanUseOverride==0)"),
         "gCourseOverride": (s["gCourseOverride"], "s32", "rw", "!=0: all courses unlocked"),
         "gCourseUnlockMask": (s["gCourseUnlockMask"], "u32", "rw",
                               "bit0=Beach,1=Tunnel,2=Volcano,3=Cave,4=River,5=Valley,6=Rainbow (used when gCourseOverride==0)"),

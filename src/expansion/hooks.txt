@@ -107,3 +107,12 @@ call:func_camera_check_801E2F58+0x8c = exp_hasSignDetector
 call:func_camera_check_801E30CC+0x48 = exp_hasSignDetector
 call:func_camera_check_801E3140+0x20 = exp_hasSignDetector
 call:func_camera_check_801E31E4+0xb0 = exp_hasSignDetector
+
+# Hook the scoring function so we can make tweaks
+score_CalculateScore = exp_CalculateScore
+
+# Skip non-wonderful chastising if we haven't unlocked that scoring yet
+call:photocheck_oaksMark+0x24B4 = exp_photocheck_skipGoodTechniqueChastising
+call:photocheck_oaksMark+0x2530 = exp_photocheck_skipGoodTechniqueChastising
+call:photocheck_oaksMark+0x24D4 = exp_photocheck_autoPressA
+call:photocheck_oaksMark+0x2550 = exp_photocheck_autoPressA
