@@ -188,6 +188,7 @@ extern u32 gExpansionMagic;
 extern s32 gMaxFilm;
 extern s32 gCanUseOverride;
 extern u32 gCanUseMask;
+extern u32 gCanUsePerLevelMask[7];
 extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
 extern u32 gDialogRequestFlags;
@@ -205,7 +206,7 @@ void exp_noop(void) {
 }
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
-    return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
+    return gCanUseOverride || ((gCanUseMask >> bit) & 1) || ((gCanUsePerLevelMask[getLevelId()] >> bit) & 1) || savedBit;
 }
 
 void expansion_init(void) {
