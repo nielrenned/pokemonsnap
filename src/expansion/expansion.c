@@ -30,6 +30,7 @@
 #define DIALOG_COUNT_6       0x0010
 #define DIALOG_COUNT_22      0x0020
 #define DIALOG_COUNT_40      0x0040
+#define DIALOG_CREDITS       0x0080
 
 
 /*********************************
@@ -911,6 +912,18 @@ void exp_labPreDialogHook(void) {
         D_80206B50_9CC370 = 0;
         func_800AAED0(0x400); // Set the flag to run the course-unlock dialog
     }
+
+    // clear the vanilla credits flags
+    if (func_800AAEE8(0x40000 | 0x80000)) {
+        // re-set the normal Oak dialog flag
+        func_800AAED0(0x20);
+    }
+    func_800AAEE8(0x40); // clear 63 pokemon credits flag
+    if (exp_dialogShouldPlay(DIALOG_CREDITS)) {
+        func_800AAED0(0x40); // set the 63 pokemon credits flag
+        exp_markDialogPlayed(DIALOG_CREDITS);
+    }
+
     func_800E5298_8AAAB8();
 }
 

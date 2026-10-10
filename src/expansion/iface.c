@@ -12,8 +12,8 @@
 //   gCanUseMask         bit0=apple, 1=pester, 2=flute, 3=dash, 4=sign detector, 5=L to stop, 6=technique scoring, 7=multiple scoring
 //   gCourseOverride     !=0: all courses unlocked
 //   gCourseUnlockMask   bit0=Beach..6=Rainbow
-//   gDialogRequestFlags bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
-//   gDialogPlayedFlags  bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
+//   gDialogRequestFlags bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon, 7=Credits
+//   gDialogPlayedFlags  bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon, 7=Credits
 
 // Everything is 32-bits for alignment reasons
 u32 gExpansionMagic = 0x534E4150;
