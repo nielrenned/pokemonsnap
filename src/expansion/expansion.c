@@ -206,7 +206,13 @@ void exp_noop(void) {
 }
 
 s32 exp_canUse(s32 bit, s32 savedBit) {
-    return gCanUseOverride || ((gCanUseMask >> bit) & 1) || ((gCanUsePerLevelMask[getLevelId()] >> bit) & 1) || savedBit;
+    s32 levelId;
+    levelId = getLevelId();
+    if (0 <= levelId && levelId < 7 && ((gCanUsePerLevelMask[levelId] >> bit) & 1)) {
+        return true;
+    }
+
+    return gCanUseOverride || ((gCanUseMask >> bit) & 1) || savedBit;
 }
 
 void expansion_init(void) {
