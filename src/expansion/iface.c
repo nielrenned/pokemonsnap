@@ -6,20 +6,21 @@
 // external client (e.g. Archipelago) to read/write. Layout is fixed; only ever
 // append new fields at the end.
 //
-//   0x80400000  gExpansionMagic     'SNAP' in ROM, becomes 'OKAY' once loaded
-//   0x80400004  gMaxFilm            film cap (s32, below 60)
-//   0x80400008  gCanUseOverride     !=0: all items usable
-//   0x8040000C  gCanUseMask         bit0=apple, 1=pester, 2=flute, 3=dash, 4=sign detector, 5=L to stop, 6=technique scoring, 7=multiple scoring
-//   0x80400010  gCourseOverride     !=0: all courses unlocked
-//   0x80400014  gCourseUnlockMask   bit0=Beach..6=Rainbow
-//   0x80400018  gDialogRequestFlags bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
-//   0x8040001C  gDialogPlayedFlags  bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
+//   gExpansionMagic     'SNAP' in ROM, becomes 'OKAY' once loaded
+//   gMaxFilm            film cap (s32, below 60)
+//   gCanUseOverride     !=0: all items usable
+//   gCanUseMask         bit0=apple, 1=pester, 2=flute, 3=dash, 4=sign detector, 5=L to stop, 6=technique scoring, 7=multiple scoring
+//   gCourseOverride     !=0: all courses unlocked
+//   gCourseUnlockMask   bit0=Beach..6=Rainbow
+//   gDialogRequestFlags bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
+//   gDialogPlayedFlags  bit0=Cloud, 1=24k, 2=72.5k, 3=130k, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon
 
 // Everything is 32-bits for alignment reasons
 u32 gExpansionMagic = 0x534E4150;
 s32 gMaxFilm = 15;
 s32 gCanUseOverride = 1;
 u32 gCanUseMask = 0;
+u32 gCanUsePerLevelMask[7] = {0, 0, 0, 0, 0, 0, 0};
 s32 gCourseOverride = 1;
 u32 gCourseUnlockMask = 0;
 u32 gDialogRequestFlags = 0;
