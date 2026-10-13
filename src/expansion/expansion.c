@@ -834,10 +834,12 @@ static s32 getSpeciesSlot(s32 pokemonID, s32 levelID) {
 // we record each species' best bonus values into the AP block.
 //   Index 0: Special Score (e.g. 1000 for Surfing Pikachu)
 //   Index 1: Pose Score
-//   Index 2: Size Score
-//   Index 3: Technique Score (0 = Normal, 1 = Wonderful)
-//   Index 4: Same Pokemon Score
-//   Index 5: Bit field containing special pose IDs
+//   Index 2: Most recent pose ID
+//   Index 3: Size Score
+//   Index 4: Technique Score (0 = Normal, 1 = Wonderful)
+//   Index 5: Same Pokemon Score
+//   Index 6: Bit field containing special pose IDs
+//   Index 7: Total score
 //     Special Pose IDs range from 1 to 12 (inclusive)  
 //     and are mapped to bits 0 to 11 of index 5
 //       1: Surfing Pikachu      7: Gust-Using Pidgey
@@ -870,6 +872,7 @@ s32 exp_registerPhoto(Photo* photo) {
         // Eventually this could be reduced to bit flags, if needed.
         score->specialScore  = max(score->specialScore, photo->specialBonus);
         score->poseScore     = max(score->poseScore, photo->posePts);
+        score->lastPoseId    = photo->poseID;
         score->sizeScore     = max(score->sizeScore, photo->proximityScore);
         score->isWellFramed  = photo->isWellFramed;
         score->samePkmnBonus = max(score->samePkmnBonus, photo->samePkmnBonus);

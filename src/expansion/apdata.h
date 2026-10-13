@@ -9,6 +9,7 @@
 typedef struct ApSpeciesScore {
     s16 specialScore;
     s16 poseScore;
+    s16 lastPoseId;
     s16 sizeScore;
     s16 isWellFramed;
     s16 samePkmnBonus;
@@ -29,7 +30,7 @@ struct ApData_s {
 // to 0x80-sized pages so flash read/write never overruns the buffer.
 typedef union {
     struct ApData_s;
-    u8 padding[0x480];
+    u8 padding[0x500];
 } ApData;
 
 extern ApData gApData;

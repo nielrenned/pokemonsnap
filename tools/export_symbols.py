@@ -69,10 +69,10 @@ def main():
         "gCameraInversionYAMLOption": (s["gCameraInversionYAMLOption"], "u32", "rw", "0=inverted, 1=normal; applied only once on entering first course"),
         "apMagic": (ap + 0x00, "u32", "r", "0x53414431 'SAD1' when the AP block is valid"),
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
-        "speciesScores": (ap + 0x08, "s16[73][7]", "r",
-                          "[slot][0=special, 1=pose, 2=size, 3=technique, 4=samePkmn, 5=poseFlags, 6=totalScore]; slot=getSpeciesSlot(pokemonID, levelID)"),
-        "signsFound": (ap + 0x08 + 73 * 2 * 7, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
-        "secretExits": (ap + 0x08 + 73 * 2 * 7 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
+        "speciesScores": (ap + 0x08, "s16[73][8]", "r",
+                          "[slot][0=special score, 1=special pose flags, 2=last regular pose id, 3=size, 4=technique, 5=samePkmn, 6=poseFlags, 7=totalScore]; slot=getSpeciesSlot(pokemonID, levelID)"),
+        "signsFound": (ap + 0x08 + 73 * 2 * 8, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
+        "secretExits": (ap + 0x08 + 73 * 2 * 8 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
     }
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.
