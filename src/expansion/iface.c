@@ -32,6 +32,14 @@ u32 gCameraInversionApplied = 0;
 // forces .data placement so the client address is stable: scores at 0x80400020).
 ApData gApData = { AP_MAGIC };
 
+u32 photoRollCount = 0;
+u32 photosWritten = 0;
+ApRawPhotoScore rawPhotoScores[61]; // 61 so that we can write garbage if we need to, we'll only read 60
+
+u32 runFrameStart = 0;
+u32 runEventCount = 0;
+ApRunEvent runEvents[256];
+
 // Per-seed auth token patched in by the apworld; the client reads it (base64)
 // as its connect name. Non-zero init keeps it in .data; sentinel = unpatched.
 u8 gApAuth[16] = "PSAP-UNPATCHED!!";

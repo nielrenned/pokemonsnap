@@ -23,6 +23,13 @@
 #define MULTIPLE_SCORE  7
 #define MULTIPLE_WO_TECHNIQUE 8
 
+// run events
+#define EVENT_POKEMON_FOOD            0
+#define EVENT_POKE_FLUTE              1
+#define EVENT_PESTER_BALL             2
+#define EVENT_DASH_ENGINE_ACTIVATED   3
+#define EVENT_DASH_ENGINE_DEACTIVATED 4
+
 // dialog flag bits
 #define DIALOG_RAINBOW_CLOUD 0x0001
 #define DIALOG_24_000        0x0002
@@ -156,6 +163,11 @@ extern SObj* D_803B0A14_550E24;
 extern SObj* D_803B0A18_550E28;
 extern SObj* D_803B0A1C_550E2C;
 
+// Camera check
+extern PhotoData D_800B0598[60];
+extern Unk803A6C18* func_8037452C_847CDC(PhotoData* arg0);
+extern UIElement* D_camera_check_80249910;
+
 extern s32 IsCartStopped;
 
 extern u16 gContInputCurrentButtons;
@@ -197,6 +209,11 @@ extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
 extern u32 gCameraInversionYAMLOption;
 extern u32 gCameraInversionApplied;
+
+// Internal globals
+
+s32 rollIndex = 0;
+u8 exp_snappedPoses[60];
 
 /*************************
  ** Expansion functions ** 
@@ -250,6 +267,19 @@ s32 exp_hasSignDetector(void) {
 s32 exp_tutorialDone(void) {
     D_800C21B0_5F050->data.hasFinishedTutorial = 1;
     return 4;
+}
+
+extern u32 runFrameStart;
+extern u32 runEventCount;
+extern ApRunEvent runEvents[256];
+
+void recordRunEvent(int itemId) {
+    ApRunEvent *runEvent = &runEvents[runEventCount];
+    if (runEventCount == 256) return;
+    runEventCount += 1;
+
+    runEvent->frame = (gtlDrawnFrameCounter - runFrameStart);
+    runEvent->type = itemId;
 }
 
 void exp_handleItemButtonsPress(GObj* obj) {
@@ -306,6 +336,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
         if ((gContInputPressedButtons & D_CBUTTONS) &&
             exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute) && PressPokeFluteTimeout == 0) {
             LastItemId = ITEM_ID_POKEFLUTE;
+            recordRunEvent(EVENT_POKE_FLUTE);
             PressPokeFluteTimeout = 45;
             Icons_ProcessButtonPress(ITEM_ID_POKEFLUTE);
             Items_PlayPokeFlute();
@@ -314,6 +345,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
                 exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall)) {
                 LastItemId = ITEM_ID_PESTER_BALL;
                 ThrowItemTimeout = 45;
+                recordRunEvent(EVENT_PESTER_BALL);
                 Items_SpawnPesterBall(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
                 Icons_ProcessButtonPress(ITEM_ID_PESTER_BALL);
                 Items_StopPokeFlute();
@@ -322,6 +354,7 @@ void exp_handleItemButtonsPress(GObj* obj) {
             } else if ((gContInputPressedButtons & A_BUTTON) &&
                        exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple)) {
                 LastItemId = ITEM_ID_APPLE;
+                recordRunEvent(EVENT_POKEMON_FOOD);
                 ThrowItemTimeout = 45;
                 Items_SpawnApple(&gMainCamera->viewMtx.lookAt.eye, &PlayerVelocity);
                 Icons_ProcessButtonPress(ITEM_ID_APPLE);
@@ -329,6 +362,12 @@ void exp_handleItemButtonsPress(GObj* obj) {
                 Icons_ProcessButtonPress(-1);
                 PressPokeFluteTimeout = 0;
             }
+        }
+        if ((gContInputPressedButtons & R_TRIG) && exp_dashAvailable()) {
+            recordRunEvent(EVENT_DASH_ENGINE_ACTIVATED);
+        }
+        if ((gContInputReleasedButtons & R_TRIG) && exp_dashAvailable()) {
+            recordRunEvent(EVENT_DASH_ENGINE_DEACTIVATED);
         }
     }
     if (ThrowItemTimeout > 0) {
@@ -379,6 +418,7 @@ s32 exp_filmUpdateCounter(void) {
 // Replaces Icons_Init to enable all the item icons on level start.
 // This way, when an item is received mid-level, trying to show or
 // animate its icon doesn't crash the game.
+// Also is used as "started level" hook
 void exp_Icons_Init(void) {
     GObj* gobj;
     s32 i;
@@ -388,6 +428,9 @@ void exp_Icons_Init(void) {
     s32 apple  = exp_canUse(POKEMON_FOOD, D_800C21B0_5F050->data.canUseApple);
     s32 pester = exp_canUse(PESTER_BALL, D_800C21B0_5F050->data.canUsePesterBall);
     s32 flute  = exp_canUse(POKE_FLUTE, D_800C21B0_5F050->data.canUseFlute);
+
+    runFrameStart = gtlDrawnFrameCounter;
+    runEventCount = 0;
 
     progressFlags = getProgressFlags();
     Icons_ItemFlags = PF_HAS_APPLE | PF_HAS_PESTER_BALL | PF_HAS_FLUTE;
@@ -875,7 +918,7 @@ s32 exp_registerPhoto(Photo* photo) {
         score->poseScore     = max(score->poseScore, photo->posePts);
         score->lastPoseId    = photo->poseID;
         score->sizeScore     = max(score->sizeScore, photo->proximityScore);
-        score->isWellFramed  = photo->isWellFramed;
+        score->isWellFramed |= photo->isWellFramed;
         score->samePkmnBonus = max(score->samePkmnBonus, photo->samePkmnBonus);
         score->totalScore    = max(score->totalScore, photo->totalScore);
         
@@ -1214,6 +1257,10 @@ void exp_Pause_UpdateSelection(GObj* obj) {
     }
 }
 
+extern ApRawPhotoScore rawPhotoScores[60];
+extern u32 photoRollCount;
+extern u32 photosWritten;
+
 void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     s32 pkmnID;
     s32 visiblePixels;
@@ -1230,6 +1277,10 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     f32 sizeScore;
     f32 tmp7;
     f32 tmp8;
+    ApRawPhotoScore* rawScore;
+
+    if (!(0 <= rollIndex && rollIndex < 60)) rollIndex = 60;
+    rawScore = &rawPhotoScores[rollIndex];
 
     score->totalScore = 0;
 
@@ -1246,11 +1297,16 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
         return;
     }
 
+    rawScore->speciesSlotId = getSpeciesSlot(score->pokemonInFocus, getLevelId());
+
     specialID = photo->pokemons[idx].specialID;
     if (specialID > 0) {
         score->specialID = specialID;
         score->specialBonus = score_SpecialBonuses[specialID];
         score->totalScore += score->specialBonus;
+
+        rawScore->specialPoseId = specialID;
+        rawScore->totalScore += score->specialBonus;
     }
 
     visiblePixels = score_PixelCountUnobstructed[id];
@@ -1280,18 +1336,19 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     roundedSizeScore = ((u16) ((sizeScore + 5.0f) / 10.0f)) * 10;
     score->totalScore += roundedSizeScore;
 
+    rawScore->sizeScore = roundedSizeScore;
+    rawScore->totalScore += roundedSizeScore;
+
     if (visiblePixelScore < 0.245f || visiblePart < 0.6f) {
         return;
     }
 
     poseID = photo->pokemons[idx].poseID;
     score->poseID = poseID;
+    rawScore->poseId = poseID;
     if (poseID > 0) {
         score->posePts = score_PoseBonuses[poseID];
         score->totalScore += score->posePts;
-        if (score->posePts < 200) {
-            return;
-        }
     } else {
         f22 = photo->pokemons[idx].yaw - atan2f(photo->unk_08.x - photo->unk_14.x, photo->unk_08.z - photo->unk_14.z);
         while (f22 > PI) {
@@ -1308,23 +1365,36 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
         tmp2 = f22 * 180.0f / PI / 15.0f;
         score->posePts = D_800AE6E4[tmp4][tmp2];
         score->totalScore += score->posePts;
-        if (score->posePts < 200) {
-            return;
+    }
+
+    rawScore->poseScore = score->posePts;
+    rawScore->totalScore += score->posePts;
+
+    if (score->posePts < 200) {
+        return;
+    }
+
+    if (score_PixelCountInCenter[id] != 0) {
+        rawScore->goodTechnique = 1;
+        rawScore->totalScore *= 2;
+
+        if (exp_canUse(TECHNIQUE_SCORE, 0)) {
+            score->isWellFramed = true;
+            score->totalScore *= 2;
         }
     }
 
-    if (score_PixelCountInCenter[id] != 0 && exp_canUse(TECHNIQUE_SCORE, 0)) {
-        score->isWellFramed = true;
-        score->totalScore *= 2;
-    }
+    // Calculate the same pokemon bonus, then decide whether or not to keep it
+    for (i = 0; i < id; i++)                      score_AddSamePkmnBonus(score, photo, i, pkmnID);
+    for (i = id + 1; i < score_PokemonCount; i++) score_AddSamePkmnBonus(score, photo, i, pkmnID);
 
-    if (exp_canUse(MULTIPLE_SCORE, 0) && (score->isWellFramed || exp_canUse(MULTIPLE_WO_TECHNIQUE, 0))) {
-        for (i = 0; i < id; i++) {
-            score_AddSamePkmnBonus(score, photo, i, pkmnID);
-        }
-        for (i = id + 1; i < score_PokemonCount; i++) {
-            score_AddSamePkmnBonus(score, photo, i, pkmnID);
-        }
+    rawScore->multipleScore = score->samePkmnBonus;
+    rawScore->totalScore += score->samePkmnBonus;
+
+    if (!(exp_canUse(MULTIPLE_SCORE, 0) && (score->isWellFramed || exp_canUse(MULTIPLE_WO_TECHNIQUE, 0)))) {
+        score->totalScore -= score->samePkmnBonus;
+        score->samePkmnBonus = 0;
+        score->samePkmnNumber = 0;
     }
 }
 
@@ -1338,18 +1408,33 @@ s32 exp_photocheck_autoPressA(UIElement* arg0, s32 arg1) {
     return A_BUTTON;
 }
 
-u8 exp_snappedPoses[60];
+extern s32 makePhoto(GObj* pokemonObj);
 
-extern PhotoData D_800B0598[60];
-extern Unk803A6C18* func_8037452C_847CDC(PhotoData* arg0);
-extern UIElement* D_camera_check_80249910;
+s32 exp_makePhoto(GObj* pokemonObj) {
+    s32 index = func_8009BC68();          // gPhotoCount before the call = the slot makePhoto writes
+    rawPhotoScores[index].frame = (gtlDrawnFrameCounter - runFrameStart);
+    return makePhoto(pokemonObj);
+}
 
 Unk803A6C18* exp_processPhoto(PhotoData* photoData) {
-    Unk803A6C18* ret = func_8037452C_847CDC(photoData);
-    s32 rollIndex = photoData - D_800B0598;
+    Unk803A6C18* ret;
+
+    rollIndex = photoData - D_800B0598;
+    if (0 <= rollIndex && rollIndex < 60) {
+        ApRawPhotoScore* rawScore = &rawPhotoScores[rollIndex];
+        rawScore->totalScore = rawScore->sizeScore = rawScore->poseScore = rawScore->multipleScore = 0;
+        rawScore->specialPoseId = rawScore->poseId = rawScore->goodTechnique = 0;
+        rawScore->speciesSlotId = 0;
+    }
+
+    ret = func_8037452C_847CDC(photoData);
     if (ret != NULL && 0 <= rollIndex && rollIndex < 60) {
         if (ret->score.pokemonInFocus > 0) exp_snappedPoses[rollIndex] = ret->score.poseID;
         else                               exp_snappedPoses[rollIndex] = 0;
+    }
+    if (rollIndex == func_8009BC68() - 1) {
+        photosWritten = rollIndex + 1;
+        photoRollCount += 1;
     }
     return ret;
 }
