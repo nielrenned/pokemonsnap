@@ -2,6 +2,7 @@
 #include "more_funcs/more_funcs.h"
 #include "app_level/app_level.h"
 #include "photo_check/photo_check.h"
+#include "camera_check/camera_check.h"
 #include "sys/render.h"
 #include "PR/os_flash.h"
 #include "apdata.h"
@@ -1335,4 +1336,213 @@ void exp_photocheck_skipGoodTechniqueChastising(UIElement* el, char* str) {
 
 s32 exp_photocheck_autoPressA(UIElement* arg0, s32 arg1) {
     return A_BUTTON;
+}
+
+u8 exp_snappedPoses[60];
+
+extern PhotoData D_800B0598[60];
+extern Unk803A6C18* func_8037452C_847CDC(PhotoData* arg0);
+extern UIElement* D_camera_check_80249910;
+
+Unk803A6C18* exp_processPhoto(PhotoData* photoData) {
+    Unk803A6C18* ret = func_8037452C_847CDC(photoData);
+    s32 rollIndex = photoData - D_800B0598;
+    if (ret != NULL && 0 <= rollIndex && rollIndex < 60) {
+        if (ret->score.pokemonInFocus > 0) exp_snappedPoses[rollIndex] = ret->score.poseID;
+        else                               exp_snappedPoses[rollIndex] = 0;
+    }
+    return ret;
+}
+
+char* exp_PhotoComments[] = {
+    "ERROR",
+    "Screeching",
+    "Fighting",
+    "Happy",
+    "Relaxed",
+    "Neighing",
+    "Embers!",
+    "Embers!",
+    "Shining",
+    "Shining",
+    "Leaping!",
+    "Eating",
+    "Dragonite!",
+    "Thunder!",
+    "Happy",
+    "Looks Happy",
+    "Happy",
+    "Jolly Dance",
+    "Beautiful",
+    "Powerful",
+    "Showed Face",
+    "Scary!",
+    "Furious!",
+    "Astonished",
+    "Dancing",
+    "Shame...",
+    "Singing",
+    "Rolling",
+    "Exploded",
+    "Blast",
+    "Fainted",
+    "Pester'd",
+    "Angry",
+    "Surprised",
+    "Happy!",
+    "Going Under",
+    "Barely see",
+    "Going Under",
+    "Amaz jump",
+    "Good jump",
+    "Jumping",
+    "Falling",
+    "Falling",
+    "Fell",
+    "In the Sky",
+    "Blasted",
+    "Pester'd",
+    "Pester'd",
+    "WhataSplsh",
+    "Splashed",
+    "Good Splash",
+    "Splashing",
+    "Nice jump",
+    "Jumping",
+    "WhataJump",
+    "Dizzy",
+    "Fainted",
+    "Waking",
+    "Jumping In",
+    "Pester'd",
+    "Pester'd",
+    "Pester'd",
+    "Popping Up",
+    "Going Under",
+    "Jolly",
+    "Stumbled",
+    "Stumbled",
+    "Stumbled",
+    "Popping Up",
+    "Going Under",
+    "Happy",
+    "Good Splash",
+    "Splashing",
+    "WhataSplsh",
+    "Pester'd",
+    "Pester'd",
+    "Pester'd",
+    "Withdrawin'",
+    "In Its Shell",
+    "Coming Out",
+    "Happy!",
+    "Looks Happy",
+    "Looks Jolly",
+    "Sure is Jolly",
+    "Fun Dance",
+    "Rockin'!",
+    "Waking",
+    "Caught",
+    "Snapping",
+    "Fishing",
+    "Nice jump",
+    "Jumped",
+    "WhataJump",
+    "Falling",
+    "Unique",
+    "Submerge",
+    "Pester'd",
+    "Pester'd",
+    "Pester'd",
+    "Happy Face",
+    "Wonderful",
+    "Shocked",
+    "WhataFlame",
+    "Unstable",
+    "Hmm...",
+    "Pester'd",
+    "Happy",
+    "Dizzy",
+    "Unstable",
+    "Funny",
+    "So Funny!",
+    "Looks Hot",
+    "Falling",
+    "Fainted",
+    "Woken Up",
+    "Roaring",
+    "Pester'd",
+    "Pester'd",
+    "Pester'd",
+    "Looks Happy",
+    "ERROR",
+    "ERROR",
+    "Looks Jolly",
+    "Hit 'em!",
+    "Fainted",
+    "Waking Up",
+    "Angry",
+    "Interesting",
+    "Funny",
+    "Fainted",
+    "Pester'd",
+    "Dancing",
+    "For Sure!",
+    "Jolly Dance",
+    "Zaps Me",
+    "Lively",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "PIKA!",
+    "ERROR",
+    "ERROR",
+    "ERROR",
+    "Facing...",
+    "Facing...",
+    "Well done",
+    "Spinning",
+    "Perfect!",
+    "Yummy",
+    "WeirdDance",
+    "Fishing...",
+    "Bite!",
+    "Popping Up",
+    "Barely See",
+    "Popping Up",
+    "Funny",
+    "Getting Up",
+    "Scratching",
+    0x00000000,
+};
+
+void exp_drawPhotoInfo(UnkIndigoHalibut* item) {
+    s32 rollIndex;
+    u8 pose;
+    char text[32];
+
+    func_camera_check_801DE288(item);
+    UIElement_FillRect(D_camera_check_80249910, 0, 88, 83, 106, 0, 0, 0, 0);
+    if (item == NULL) return;
+
+    rollIndex = item->unk_00 - D_800B0598; // unk_00 points into the PhotoData array
+    pose = exp_snappedPoses[rollIndex];
+    if (pose == 0) return;
+
+    UIText_SetShadowOffset(1);
+    UIText_SetSpacing(-1, 3);
+    UIElement_SetFont(D_camera_check_80249910, FONT_8);
+    
+    UIElement_SetTextPos(D_camera_check_80249910, 0, 88);
+    UIElement_PrintText(D_camera_check_80249910, "Pose");
+
+    sprintf(text, "%s", exp_PhotoComments[pose]);
+    UIElement_SetTextPos(D_camera_check_80249910, 45 - UIText_GetStringWidth(text), 98);
+    UIElement_PrintText(D_camera_check_80249910, text);
 }
