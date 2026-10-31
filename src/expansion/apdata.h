@@ -35,6 +35,7 @@ typedef struct {
     s16 goodTechnique;
     s16 multipleScore;
     s16 totalScore;
+    s16 levelId;
 } ApRawPhotoScore;
 
 typedef struct { 

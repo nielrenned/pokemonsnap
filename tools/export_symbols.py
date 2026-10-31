@@ -73,11 +73,14 @@ def main():
                           "[slot][0=special score, 1=special pose flags, 2=last regular pose id, 3=size, 4=technique, 5=samePkmn, 6=poseFlags, 7=totalScore]; slot=getSpeciesSlot(pokemonID, levelID)"),
         "signsFound": (ap + 0x08 + 73 * 2 * 8, "u8[6]", "r", "[beach, tunnel, volcano, river, cave, valley]"),
         "secretExits": (ap + 0x08 + 73 * 2 * 8 + 6, "u8", "r", "Bit flags for secret exits taken. bit1=Tunnel,3=River,5=Valley"),
-        "photosWritten": (s["photosWritten"], "u32", "r", "Photo Count"),
-        "photoRollCount": (s["photoRollCount"], "u32", "r", "Photo Roll Count"),
-        "rawPhotoScores": (s["rawPhotoScores"], "s16[60][8]", "r", "Raw scores for each camera roll"),
-        "runEvents": (s["runEvents"], "s16[256][3]", "r", "Log of events in the run"),
-        "runEventCount": (s["runEventCount"], "u32", "r", "Count of events in the run"),
+        "photosWritten": (s["photosWritten"], "u32", "r", "number of photos on the last scored roll"),
+        "photoRollCount": (s["photoRollCount"], "u32", "rw",
+                           "incremented when camera check finishes scoring a roll; the client writes 0 after logging it"),
+        "rawPhotoScores": (s["rawPhotoScores"], "ApRawPhotoScore[61]", "r",
+                           "[roll index][0=frame (u16), 1=species slot + 1 (0 = none), 2=special pose id, 3=size, 4=pose id, 5=pose score, 6=good technique, 7=same pkmn, 8=total, 9=level id]; scored as if every scoring unlock were owned; [60] is scratch"),
+        "runEvents": (s["runEvents"], "u16[256][2]", "r",
+                      "[event][0=frame since course start, 1=type: 0=food, 1=flute, 2=pester, 3=dash on, 4=dash off]"),
+        "runEventCount": (s["runEventCount"], "u32", "r", "number of runEvents recorded this course (max 256)"),
     }
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.

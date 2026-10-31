@@ -212,7 +212,9 @@ extern u32 gCameraInversionApplied;
 
 // Internal globals
 
-s32 rollIndex = 0;
+// Which rawPhotoScores entry exp_CalculateScore writes to. Only points at a real
+// roll entry while exp_processPhoto is scoring that photo
+s32 rollIndex = 60;
 u8 exp_snappedPoses[60];
 
 /*************************
@@ -1257,7 +1259,7 @@ void exp_Pause_UpdateSelection(GObj* obj) {
     }
 }
 
-extern ApRawPhotoScore rawPhotoScores[60];
+extern ApRawPhotoScore rawPhotoScores[61];
 extern u32 photoRollCount;
 extern u32 photosWritten;
 
@@ -1297,7 +1299,8 @@ void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
         return;
     }
 
-    rawScore->speciesSlotId = getSpeciesSlot(score->pokemonInFocus, getLevelId());
+    // Need to add 1 because slot IDs are 1-indexed so that 0 == no pokemon
+    rawScore->speciesSlotId = getSpeciesSlot(score->pokemonInFocus, photo->levelID) + 1;
 
     specialID = photo->pokemons[idx].specialID;
     if (specialID > 0) {
@@ -1425,6 +1428,7 @@ Unk803A6C18* exp_processPhoto(PhotoData* photoData) {
         rawScore->totalScore = rawScore->sizeScore = rawScore->poseScore = rawScore->multipleScore = 0;
         rawScore->specialPoseId = rawScore->poseId = rawScore->goodTechnique = 0;
         rawScore->speciesSlotId = 0;
+        rawScore->levelId = photoData->levelID;
     }
 
     ret = func_8037452C_847CDC(photoData);
@@ -1433,9 +1437,13 @@ Unk803A6C18* exp_processPhoto(PhotoData* photoData) {
         else                               exp_snappedPoses[rollIndex] = 0;
     }
     if (rollIndex == func_8009BC68() - 1) {
+        // The client logs the roll when this is nonzero, then writes 0 back.
         photosWritten = rollIndex + 1;
         photoRollCount += 1;
     }
+
+    // Any scoring after this (Oak's grading, the report, the album) goes to the scratch entry
+    rollIndex = 60;
     return ret;
 }
 
