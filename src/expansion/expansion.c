@@ -207,7 +207,7 @@ extern s32 gCourseOverride;
 extern u32 gCourseUnlockMask;
 extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
-extern u32 gCameraInversionYAMLOption;
+extern u32 gCameraInversionRequest;
 extern u32 gCameraInversionApplied;
 
 // Internal globals
@@ -292,14 +292,16 @@ void exp_handleItemButtonsPress(GObj* obj) {
 
     // Check for camera inversion YAML option, in case it needs to be applied
     // AND with 0x02 to check that the client did actually write to this field
-    if (!gCameraInversionApplied && (gCameraInversionYAMLOption & 0x02)) {
-        u32 cameraInversionValue = (gCameraInversionYAMLOption & 0x01);
+    if (gCameraInversionRequest & 0x02) {
+        u32 cameraInversionValue = (gCameraInversionRequest & 0x01);
         if (cameraInversionValue) {
             ProgressFlags |= PF_INVERTED_Y;
+        } else {
+            ProgressFlags &= ~PF_INVERTED_Y;
         }
         D_800C21B0_5F050->data.invertedY = cameraInversionValue;
         IsAxisYInverted = cameraInversionValue;
-        gCameraInversionApplied = 1;
+        gCameraInversionRequest = cameraInversionValue | 0x04;
     }
 
     // We need to update IsDashEngineAvailable here. Otherwise, the icons do

@@ -66,7 +66,7 @@ def main():
                               "bit0=Beach, 1=Tunnel, 2=Volcano, 3=River, 4=Cave, 5=Valley, 6=Rainbow (used when gCourseOverride==0)"),
         "gDialogRequestFlags": (s["gDialogRequestFlags"], "u32", "rw", "Dialog flags: bit0=Cloud, 1=Apple, 2=Pester, 3=Flute, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon, 7=Credits"),
         "gDialogPlayedFlags": (s["gDialogPlayedFlags"], "u32", "rw", "Dialog flags: bit0=Cloud, 1=Apple, 2=Pester, 3=Flute, 4=6 Pokemon, 5=22 Pokemon, 6=40 Pokemon, 7=Credits"),
-        "gCameraInversionYAMLOption": (s["gCameraInversionYAMLOption"], "u32", "rw", "0=inverted, 1=normal; applied only once on entering first course"),
+        "gCameraInversionRequest": (s["gCameraInversionRequest"], "u32", "rw", "bit0: 0=inverted, 1=normal; Set bit 1 to request a change; Bit 2 is set to acknowledge a change"),
         "apMagic": (ap + 0x00, "u32", "r", "0x53414431 'SAD1' when the AP block is valid"),
         "apChecksum": (ap + 0x04, "u32", "r", "checksum over speciesScores"),
         "speciesScores": (ap + 0x08, "s16[73][8]", "r",
