@@ -85,8 +85,8 @@ def main():
 
     # Identifiers: `rom_offset` is the z64 write offset, `addr` the RAM read addr.
     idents = {
-        "auth": (s["gApAuth"], rom_off(s["gApAuth"]), 16, "u8[16]",
-                 "per-seed auth token; client connects with base64(token)"),
+        "auth": (s["gApAuth"],     rom_off(s["gApAuth"]),     16, "u8[16]", "per-seed auth token; client connects with base64(token)"),
+        "name": (s["gApSlotName"], rom_off(s["gApSlotName"]), 16, "u8[16]", "Player name field, 7 full-width ascii, plus a null-terminator"),
     }
 
     data = {
