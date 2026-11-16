@@ -1777,3 +1777,48 @@ s32 exp_PKMNReportOverview(void) {
         ohWait(1);
     }
 }
+
+void exp_PKMNReportDetailText(UIElement* ui, s32 snappedPokemonCount, s32 snappedSignCount, s32 savedReportScore) {
+    char sp28[0x80];
+    u32 reportThousands;
+    u32 reportUnits;
+
+    UIElement_Draw(ui);
+    sp28[0] = sp28[1] = 0;
+
+    // Save data
+    UIElement_SetTextPos(ui, 8, 16);
+    UIElement_PrintText(ui, "PKMN snapped");
+    UIElement_SetTextPos(ui, 88, 16);
+    func_8037519C_84894C(ui, "\\i%7d\\g kind%s", snappedPokemonCount, (snappedPokemonCount >= 2) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 32);
+    func_8037519C_84894C(ui, "PKMN Signs snapped");
+    UIElement_SetTextPos(ui, 88, 32);
+    func_8037519C_84894C(ui, "\\i%7d\\g sign%s", snappedSignCount, (snappedSignCount != 1) ? "s" : "");
+
+    // AP data
+    UIElement_SetTextPos(ui, 8, 51);
+    func_8037519C_84894C(ui, "PKMN Pics found");
+    UIElement_SetTextPos(ui, 88, 51);
+    func_8037519C_84894C(ui, "\\i%7d\\g pic%s", gPokemonPicCount, (gPokemonPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 67);
+    func_8037519C_84894C(ui, "Sign Pics found");
+    UIElement_SetTextPos(ui, 88, 67);
+    func_8037519C_84894C(ui, "\\i%7d\\g pic%s", gSignPicCount, (gSignPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 83);
+    UIElement_PrintText(ui, "Report Score");
+    UIElement_SetTextPos(ui, 88, 83);
+    reportThousands = gReportScore / 1000;
+    reportUnits = gReportScore % 1000;
+    if (reportThousands > 0) {
+        if (reportUnits < 10)        func_8037519C_84894C(ui, "\\i%3d,00%d\\g pts", reportThousands, reportUnits);
+        else if (reportUnits < 100)  func_8037519C_84894C(ui, "\\i%3d,0%d\\g pts",  reportThousands, reportUnits);
+        else                         func_8037519C_84894C(ui, "\\i%3d,%d\\g pts",   reportThousands, reportUnits);
+    }
+    else {
+        func_8037519C_84894C(ui, "\\i%7d\\g pts", reportUnits);
+    }
+}
