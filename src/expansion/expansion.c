@@ -209,6 +209,9 @@ extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
 extern u32 gCameraInversionRequest;
 extern u32 gCameraInversionApplied;
+extern u32 gPokemonPicCount;
+extern u32 gSignPicCount;
+extern u32 gReportScore;
 
 // Internal globals
 
@@ -1640,4 +1643,137 @@ void exp_drawPhotoInfo(UnkIndigoHalibut* item) {
     sprintf(text, "%s", exp_PhotoComments[pose]);
     UIElement_SetTextPos(D_camera_check_80249910, 45 - UIText_GetStringWidth(text), 98);
     UIElement_PrintText(D_camera_check_80249910, text);
+}
+
+extern s32 func_800E3774_8A8F94(void);
+
+s32 exp_PKMNReportOverview(void) {
+    s32 i;
+    s32 sp80;
+    UnkStruct800BEDF8* temp_v0_2;
+    s32 sp78;
+    s32 spaceLeft;
+    s32 temp_v0;
+    s32 numPics;
+    u32 reportThousands;
+    u32 reportUnits;
+    char sp4C[0x18];
+
+    sp78 = -1;
+    sp80 = 0;
+    temp_v0 = func_800E510C_8AA92C();
+    if (temp_v0 != 0) {
+        sp80 = temp_v0;
+    }
+    UILayout_CreateButtons(func_800E3230_8A8A50());
+    if (func_800E3774_8A8F94() == 0) {
+        UILayout_DisableButton(1, 3);
+    }
+    FocusMark_SetTargetSize(0x3E, 0xD);
+    ohWait(1);
+    while (func_800A7460() != 0) {
+        ohWait(1);
+    }
+    func_800E3264_8A8A84(NULL, &sp80);
+    FocusMark_Show(true);
+
+    while (true) {
+        temp_v0_2 = func_800AA38C(0);
+        func_800E3264_8A8A84(temp_v0_2, &sp80);
+        if (temp_v0_2->pressedButtons & A_BUTTON) {
+            auPlaySound(SOUND_ID_66);
+
+            switch (D_80206B44_9CC364[sp80].id) {
+                case 1:
+                    return 1;
+                case 2:
+                    D_80195894_95B0B4 = 0xE;
+                    return 4;
+                case 3:
+                    if (func_800E3774_8A8F94() != 0) {
+                        D_80195894_95B0B4 = 0xC;
+                        return 4;
+                    }
+                    break;
+                case 4:
+                    return 3;
+            }
+        }
+
+        if (sp78 != sp80) {
+            sp78 = sp80;
+            UIElement_Draw(func_800E1B40_8A7360());
+            UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 0);
+            UIText_SetShadowOffset(1);
+            UIText_SetSpacing(-1, 3);
+
+            switch (D_80206B44_9CC364[sp80].id) {
+
+                case 3:
+                    for (numPics = 0, i = 0; i < 60; i++) {
+                        if (getAlbumPhoto(i) != NULL) {
+                            numPics++;
+                        }
+                    }
+
+                    if (numPics != 0) {
+                        if (numPics == 1) {
+                            UIElement_PrintText(func_800E1B40_8A7360(), "Saved Picture");
+                        } else {
+                            UIElement_PrintText(func_800E1B40_8A7360(), "Saved Pictures");
+                        }
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 124, 0);
+                        if (numPics == 1) {
+                            sprintf(sp4C, "\\i%2d\\g picture", numPics);
+                        } else {
+                            sprintf(sp4C, "\\i%2d\\g pictures", numPics);
+                        }
+                        UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 16);
+                        UIElement_PrintText(func_800E1B40_8A7360(), "Space left for");
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 124, 16);
+                        spaceLeft = 60 - numPics;
+                        if (spaceLeft == 1) {
+                            sprintf(sp4C, "\\i%2d\\g picture", spaceLeft);
+                        } else {
+                            sprintf(sp4C, "\\i%2d\\g pictures", spaceLeft);
+                        }
+                        UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    } else {
+                        UIElement_PrintText(func_800E1B40_8A7360(), "Use the \"\\hAlbum Mark\\p \\u\" in\nthe Camera Check mode to\nsave pictures in your Album.");
+                    }
+                    break;
+                case 2:
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 0);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of PKMN Pics");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 16);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of Sign Pics");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 32);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "Report Score");
+                    sprintf(sp4C, "\\i%8d\\g pic%s", gPokemonPicCount, gPokemonPicCount != 1 ? "s" : "");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 0);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    sprintf(sp4C, "\\i%8d\\g pic%s", gSignPicCount, gSignPicCount != 1 ? "s" : "");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 16);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    reportThousands = gReportScore / 1000;
+                    reportUnits = gReportScore % 1000;
+                    if (reportThousands > 0) {
+                        if (reportUnits < 10)        sprintf(sp4C, "\\i%4d,00%d\\g pts", reportThousands, reportUnits);
+                        else if (reportUnits < 100)  sprintf(sp4C, "\\i%4d,0%d\\g pts",  reportThousands, reportUnits);
+                        else                         sprintf(sp4C, "\\i%4d,%d\\g pts",   reportThousands, reportUnits);
+                    }
+                    else {
+                        sprintf(sp4C, "\\i%8d\\g pts", reportUnits);
+                    }
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 32);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    break;
+                default:
+                    UIElement_PrintText(func_800E1B40_8A7360(), UILayout_GetButtonText(func_800E3230_8A8A50(), D_80206B44_9CC364[sp80].id));
+                    break;
+            }
+        }
+        ohWait(1);
+    }
 }

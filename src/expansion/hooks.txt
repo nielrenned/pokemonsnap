@@ -128,3 +128,6 @@ call:photocheck_oaksMark+0x24B4 = exp_photocheck_skipGoodTechniqueChastising
 call:photocheck_oaksMark+0x2530 = exp_photocheck_skipGoodTechniqueChastising
 call:photocheck_oaksMark+0x24D4 = exp_photocheck_autoPressA
 call:photocheck_oaksMark+0x2550 = exp_photocheck_autoPressA
+
+# Hook the report score overview printing
+func_800E37CC_8A8FEC = exp_PKMNReportOverview
