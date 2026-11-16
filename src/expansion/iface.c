@@ -18,10 +18,10 @@
 // Everything is 32-bits for alignment reasons
 u32 gExpansionMagic = 0x534E4150;
 s32 gMaxFilm = 60;
-s32 gCanUseOverride = 1;
+s32 gCanUseOverride = 0;
 u32 gCanUseMask = 0;
 u32 gCanUsePerLevelMask[7] = {0, 0, 0, 0, 0, 0, 0};
-s32 gCourseOverride = 1;
+s32 gCourseOverride = 0;
 u32 gCourseUnlockMask = 0;
 u32 gDialogRequestFlags = 0;
 u32 gDialogPlayedFlags = 0;
