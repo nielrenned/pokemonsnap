@@ -345,7 +345,7 @@ def create_build_script(linker_entries: List[LinkerEntry]):
     ninja.rule(
         "z64",
         description="rom $out",
-        command=f"{CROSS_OBJCOPY} $in $out -O binary && {sys.executable} tools/n64crc.py $out 6103",
+        command=f"{CROSS_OBJCOPY} $in $out -O binary && {sys.executable} tools/pad_rom.py $out && {sys.executable} tools/n64crc.py $out 6103",
     )
 
     ninja.rule(
@@ -655,7 +655,7 @@ def create_build_script(linker_entries: List[LinkerEntry]):
         Z64_PATH,
         "z64",
         HOOKED_ELF_PATH,
-        implicit=["tools/n64crc.py"],
+        implicit=["tools/pad_rom.py", "tools/n64crc.py"],
     )
 
     ninja.build(

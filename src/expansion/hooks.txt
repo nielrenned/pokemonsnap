@@ -128,3 +128,11 @@ call:photocheck_oaksMark+0x24B4 = exp_photocheck_skipGoodTechniqueChastising
 call:photocheck_oaksMark+0x2530 = exp_photocheck_skipGoodTechniqueChastising
 call:photocheck_oaksMark+0x24D4 = exp_photocheck_autoPressA
 call:photocheck_oaksMark+0x2550 = exp_photocheck_autoPressA
+
+# Hook the report score printing
+func_800E37CC_8A8FEC = exp_PKMNReportOverview
+func_801E0DB4_9D7724 = exp_PKMNReportDetailText
+func_801E2AE8_992558 = exp_PostSubmissionReport
+
+# Runs every frame (for real)
+gtlUpdate = exp_gtlUpdate

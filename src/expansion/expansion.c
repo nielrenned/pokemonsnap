@@ -44,6 +44,14 @@
 /*********************************
  ** Duplicated type definitions ** 
  *********************************/
+typedef struct FnBundle {
+    /* 0x00 */ u16 unk00;
+    /* 0x04 */ void (*fnPrivUpdate)(void);
+    /* 0x08 */ void (*fnUpdate)(struct FnBundle*);
+    /* 0x0C */ void (*fnPrivDraw)(void);
+    /* 0x10 */ void (*fnDraw)(struct FnBundle*);
+} FnBundle;
+
 enum IconSpriteIds {
     ICON_ID_APPLE = 0,
     ICON_ID_PESTER_BALL = 1,
@@ -87,6 +95,9 @@ extern struct {
 /**********************
  ** Extern functions ** 
  **********************/
+extern void (*gtlUpdateInputFunc)(void);
+extern s32 gtlCheckExitMainLoop(void);
+
 extern void Icons_FinishZoomIn(GObj* arg0);
 extern void Icons_MoveIcon(s32 id, s32 offset);
 extern void Icons_UpdateDashEngineIcon(GObj*);
@@ -107,10 +118,12 @@ extern s32 func_800AA28C(s32, s32);
 extern s32 func_800BFC5C_5CAFC(void); // Rank
 extern s32 func_800C0290_5D130(void);
 extern s32 func_800E3264_8A8A84(void*, s32*);
+extern s32 func_800E3774_8A8F94(void);
 
 extern f32 func_8009BDDC(s16, s8);
 extern f32 score_Interpolate(f32 value, f32 xmin, f32 xmax, f32 ymin, f32 ymax);
 extern void score_AddSamePkmnBonus(ScoreData* score, PhotoData* photo, s32 idx, s32 thisPokemon);
+extern s32 makePhoto(GObj* pokemonObj);
 
 /**********************
  ** Extern variables ** 
@@ -150,6 +163,7 @@ extern u32 ProgressFlags;
 extern s8 IsAxisYInverted;
 
 extern UIButton* D_80195CEC_95B50C[];
+extern UIElement* D_802290E0_9D8B50;
 
 // While set, every course is selectable regardless of its courseX flag
 // (testing default-on). Clear once an external grantor drives the course flags.
@@ -209,6 +223,22 @@ extern u32 gDialogRequestFlags;
 extern u32 gDialogPlayedFlags;
 extern u32 gCameraInversionRequest;
 extern u32 gCameraInversionApplied;
+extern u32 gPokemonPicCount;
+extern u32 gSignPicCount;
+extern u32 gReportScore;
+
+extern s32 gRestoreSlot;
+extern u32 gRestoreScore;
+extern PhotoData gRestoreData;
+
+// For tracking photos
+extern u32 runFrameStart;
+extern u32 runEventCount;
+extern ApRunEvent runEvents[256];
+
+extern ApRawPhotoScore rawPhotoScores[61];
+extern u32 photoRollCount;
+extern u32 photosWritten;
 
 // Internal globals
 
@@ -217,9 +247,25 @@ extern u32 gCameraInversionApplied;
 s32 rollIndex = 60;
 u8 exp_snappedPoses[60];
 
+bool saveLoaded = false;
+
+void exp_checkReportRestore(void);
+
 /*************************
  ** Expansion functions ** 
  *************************/
+
+// Actually runs every single frame
+void exp_gtlUpdate(FnBundle* self) {
+    if (saveLoaded) {
+        exp_checkReportRestore();
+    }
+    gtlUpdateInputFunc();
+    self->fnPrivUpdate();
+    if (gtlCheckExitMainLoop()) {
+        ohDeleteAllObjects();
+    }
+}
 
 // Generic no-op replacement (skips Oak's first-visit intro speech). The lab's
 // dispatcher still consumes the one-shot event bit, so it just doesn't display.
@@ -245,6 +291,7 @@ void exp_createFreshSave(void) {
     D_800C21B0_5F050->data.unk_64_08 = 1; // Skip the pokemon report dialog (and enable the report)
     D_800C21B0_5F050->data.unk_64_09 = 1; // Skip the pokemon album dialog (and enable the album)
     func_800BF1F0_5C090();
+    saveLoaded = true;
 }
 
 // Returns max rank (6) so the course-select text lookup indexes the full
@@ -270,10 +317,6 @@ s32 exp_tutorialDone(void) {
     D_800C21B0_5F050->data.hasFinishedTutorial = 1;
     return 4;
 }
-
-extern u32 runFrameStart;
-extern u32 runEventCount;
-extern ApRunEvent runEvents[256];
 
 void recordRunEvent(int itemId) {
     ApRunEvent *runEvent = &runEvents[runEventCount];
@@ -830,6 +873,7 @@ s32 exp_saveMain(uintptr_t addr, s32 size) {
 s32 exp_loadMain(uintptr_t addr, s32 size) {
     func_800C06A8_5D548(addr, size);
     exp_apLoad();
+    saveLoaded = true;
     return 0;
 }
 
@@ -1261,10 +1305,6 @@ void exp_Pause_UpdateSelection(GObj* obj) {
     }
 }
 
-extern ApRawPhotoScore rawPhotoScores[61];
-extern u32 photoRollCount;
-extern u32 photosWritten;
-
 void exp_CalculateScore(ScoreData* score, PhotoData* photo, s32 id) {
     s32 pkmnID;
     s32 visiblePixels;
@@ -1412,8 +1452,6 @@ void exp_photocheck_skipGoodTechniqueChastising(UIElement* el, char* str) {
 s32 exp_photocheck_autoPressA(UIElement* arg0, s32 arg1) {
     return A_BUTTON;
 }
-
-extern s32 makePhoto(GObj* pokemonObj);
 
 s32 exp_makePhoto(GObj* pokemonObj) {
     s32 index = func_8009BC68();          // gPhotoCount before the call = the slot makePhoto writes
@@ -1640,4 +1678,228 @@ void exp_drawPhotoInfo(UnkIndigoHalibut* item) {
     sprintf(text, "%s", exp_PhotoComments[pose]);
     UIElement_SetTextPos(D_camera_check_80249910, 45 - UIText_GetStringWidth(text), 98);
     UIElement_PrintText(D_camera_check_80249910, text);
+}
+
+s32 exp_PKMNReportOverview(void) {
+    s32 i;
+    s32 sp80;
+    UnkStruct800BEDF8* temp_v0_2;
+    s32 sp78;
+    s32 spaceLeft;
+    s32 temp_v0;
+    s32 numPics;
+    u32 reportThousands;
+    u32 reportUnits;
+    char sp4C[0x18];
+
+    sp78 = -1;
+    sp80 = 0;
+    temp_v0 = func_800E510C_8AA92C();
+    if (temp_v0 != 0) {
+        sp80 = temp_v0;
+    }
+    UILayout_CreateButtons(func_800E3230_8A8A50());
+    if (func_800E3774_8A8F94() == 0) {
+        UILayout_DisableButton(1, 3);
+    }
+    FocusMark_SetTargetSize(0x3E, 0xD);
+    ohWait(1);
+    while (func_800A7460() != 0) {
+        ohWait(1);
+    }
+    func_800E3264_8A8A84(NULL, &sp80);
+    FocusMark_Show(true);
+
+    while (true) {
+        temp_v0_2 = func_800AA38C(0);
+        func_800E3264_8A8A84(temp_v0_2, &sp80);
+        if (temp_v0_2->pressedButtons & A_BUTTON) {
+            auPlaySound(SOUND_ID_66);
+
+            switch (D_80206B44_9CC364[sp80].id) {
+                case 1:
+                    return 1;
+                case 2:
+                    D_80195894_95B0B4 = 0xE;
+                    return 4;
+                case 3:
+                    if (func_800E3774_8A8F94() != 0) {
+                        D_80195894_95B0B4 = 0xC;
+                        return 4;
+                    }
+                    break;
+                case 4:
+                    return 3;
+            }
+        }
+
+        if (sp78 != sp80) {
+            sp78 = sp80;
+            UIElement_Draw(func_800E1B40_8A7360());
+            UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 0);
+            UIText_SetShadowOffset(1);
+            UIText_SetSpacing(-1, 3);
+
+            switch (D_80206B44_9CC364[sp80].id) {
+
+                case 3:
+                    for (numPics = 0, i = 0; i < 60; i++) {
+                        if (getAlbumPhoto(i) != NULL) {
+                            numPics++;
+                        }
+                    }
+
+                    if (numPics != 0) {
+                        if (numPics == 1) {
+                            UIElement_PrintText(func_800E1B40_8A7360(), "Saved Picture");
+                        } else {
+                            UIElement_PrintText(func_800E1B40_8A7360(), "Saved Pictures");
+                        }
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 124, 0);
+                        if (numPics == 1) {
+                            sprintf(sp4C, "\\i%2d\\g picture", numPics);
+                        } else {
+                            sprintf(sp4C, "\\i%2d\\g pictures", numPics);
+                        }
+                        UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 16);
+                        UIElement_PrintText(func_800E1B40_8A7360(), "Space left for");
+                        UIElement_SetTextPos(func_800E1B40_8A7360(), 124, 16);
+                        spaceLeft = 60 - numPics;
+                        if (spaceLeft == 1) {
+                            sprintf(sp4C, "\\i%2d\\g picture", spaceLeft);
+                        } else {
+                            sprintf(sp4C, "\\i%2d\\g pictures", spaceLeft);
+                        }
+                        UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    } else {
+                        UIElement_PrintText(func_800E1B40_8A7360(), "Use the \"\\hAlbum Mark\\p \\u\" in\nthe Camera Check mode to\nsave pictures in your Album.");
+                    }
+                    break;
+                case 2:
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 0);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of Pokεmon Pics");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 16);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of Sign Pics");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 32);
+                    UIElement_PrintText(func_800E1B40_8A7360(), "Report Score");
+                    sprintf(sp4C, "\\i%8d\\g pic%s", gPokemonPicCount, gPokemonPicCount != 1 ? "s" : "");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 0);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    sprintf(sp4C, "\\i%8d\\g pic%s", gSignPicCount, gSignPicCount != 1 ? "s" : "");
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 16);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    reportThousands = gReportScore / 1000;
+                    reportUnits = gReportScore % 1000;
+                    if (reportThousands > 0) {
+                        if (reportUnits < 10)        sprintf(sp4C, "\\i%4d,00%d\\g pts", reportThousands, reportUnits);
+                        else if (reportUnits < 100)  sprintf(sp4C, "\\i%4d,0%d\\g pts",  reportThousands, reportUnits);
+                        else                         sprintf(sp4C, "\\i%4d,%d\\g pts",   reportThousands, reportUnits);
+                    }
+                    else {
+                        sprintf(sp4C, "\\i%8d\\g pts", reportUnits);
+                    }
+                    UIElement_SetTextPos(func_800E1B40_8A7360(), 86, 32);
+                    UIElement_PrintText(func_800E1B40_8A7360(), sp4C);
+                    break;
+                default:
+                    UIElement_PrintText(func_800E1B40_8A7360(), UILayout_GetButtonText(func_800E3230_8A8A50(), D_80206B44_9CC364[sp80].id));
+                    break;
+            }
+        }
+        ohWait(1);
+    }
+}
+
+void exp_PKMNReportDetailText(UIElement* ui, s32 snappedPokemonCount, s32 snappedSignCount, s32 savedReportScore) {
+    u32 reportThousands;
+    u32 reportUnits;
+
+    UIElement_Draw(ui);
+
+    // Save data
+    UIElement_SetTextPos(ui, 8, 16);
+    UIElement_PrintText(ui, "Pokεmon snapped");
+    UIElement_SetTextPos(ui, 88, 16);
+    func_8037519C_84894C(ui, "\\i%7d\\g kind%s", snappedPokemonCount, (snappedPokemonCount >= 2) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 32);
+    func_8037519C_84894C(ui, "Pokεmon Signs snapped");
+    UIElement_SetTextPos(ui, 88, 32);
+    func_8037519C_84894C(ui, "\\i%7d\\g sign%s", snappedSignCount, (snappedSignCount != 1) ? "s" : "");
+
+    // AP data
+    UIElement_SetTextPos(ui, 8, 51);
+    func_8037519C_84894C(ui, "Pokεmon Pics found");
+    UIElement_SetTextPos(ui, 88, 51);
+    func_8037519C_84894C(ui, "\\i%7d\\g pic%s", gPokemonPicCount, (gPokemonPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 67);
+    func_8037519C_84894C(ui, "Sign Pics found");
+    UIElement_SetTextPos(ui, 88, 67);
+    func_8037519C_84894C(ui, "\\i%7d\\g pic%s", gSignPicCount, (gSignPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(ui, 8, 83);
+    UIElement_PrintText(ui, "Report Score");
+    UIElement_SetTextPos(ui, 88, 83);
+    reportThousands = gReportScore / 1000;
+    reportUnits = gReportScore % 1000;
+    if (reportThousands > 0) {
+        if (reportUnits < 10)        func_8037519C_84894C(ui, "\\i%3d,00%d\\g pts", reportThousands, reportUnits);
+        else if (reportUnits < 100)  func_8037519C_84894C(ui, "\\i%3d,0%d\\g pts",  reportThousands, reportUnits);
+        else                         func_8037519C_84894C(ui, "\\i%3d,%d\\g pts",   reportThousands, reportUnits);
+    }
+    else {
+        func_8037519C_84894C(ui, "\\i%7d\\g pts", reportUnits);
+    }
+}
+
+void exp_PostSubmissionReport(s32 numPokemon, s32 numPoints, s32 arg2) {
+    UNUSED s32 pad[0x7];
+    u32 reportThousands;
+    u32 reportUnits;
+
+    UIElement_Draw(D_802290E0_9D8B50);
+    UIText_SetPrintDelay(0);
+    UIElement_SetFont(D_802290E0_9D8B50, FONT_12);
+    UIText_SetShadowOffset(0);
+    UIText_SetSpacing(0, 4);
+
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 2);
+    func_8037519C_84894C(D_802290E0_9D8B50, "Pokεmon Pics found");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 2);
+    func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g pic%s", gPokemonPicCount, (gPokemonPicCount != 1) ? "s" : "");
+    
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 18);
+    UIElement_PrintText(D_802290E0_9D8B50, "Sign Pics found");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 18);
+    func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g sign%s", gSignPicCount, (gSignPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 34);
+    UIElement_PrintText(D_802290E0_9D8B50, "Report Score");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 34);
+    reportThousands = gReportScore / 1000;
+    reportUnits = gReportScore % 1000;
+    if (reportThousands > 0) {
+        if (reportUnits < 10)        func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,00%d\\g pts", reportThousands, reportUnits);
+        else if (reportUnits < 100)  func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,0%d\\g pts",  reportThousands, reportUnits);
+        else                         func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,%d\\g pts",   reportThousands, reportUnits);
+    }
+    else {
+        func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g pts", reportUnits);
+    }
+}
+
+void exp_checkReportRestore(void) {
+    if (gRestoreSlot == -1) return;
+
+    if (
+        (0 <= gRestoreSlot && gRestoreSlot < 63) && 
+        D_800C21B0_5F050->data.unk_180[gRestoreSlot].unk_04.s32 == -1
+    ) {
+        D_800C21B0_5F050->data.unk_180[gRestoreSlot] = gRestoreData;
+        D_800C21B0_5F050->data.unk_6C[gRestoreSlot] = gRestoreScore;
+    }
+
+    gRestoreSlot = -1;
 }
