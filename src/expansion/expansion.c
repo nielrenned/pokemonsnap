@@ -163,6 +163,7 @@ extern u32 ProgressFlags;
 extern s8 IsAxisYInverted;
 
 extern UIButton* D_80195CEC_95B50C[];
+extern UIElement* D_802290E0_9D8B50;
 
 // While set, every course is selectable regardless of its courseX flag
 // (testing default-on). Clear once an external grantor drives the course flags.
@@ -1777,7 +1778,7 @@ s32 exp_PKMNReportOverview(void) {
                     break;
                 case 2:
                     UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 0);
-                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of PKMN Pics");
+                    UIElement_PrintText(func_800E1B40_8A7360(), "No. of Pokεmon Pics");
                     UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 16);
                     UIElement_PrintText(func_800E1B40_8A7360(), "No. of Sign Pics");
                     UIElement_SetTextPos(func_800E1B40_8A7360(), 0, 32);
@@ -1811,27 +1812,25 @@ s32 exp_PKMNReportOverview(void) {
 }
 
 void exp_PKMNReportDetailText(UIElement* ui, s32 snappedPokemonCount, s32 snappedSignCount, s32 savedReportScore) {
-    char sp28[0x80];
     u32 reportThousands;
     u32 reportUnits;
 
     UIElement_Draw(ui);
-    sp28[0] = sp28[1] = 0;
 
     // Save data
     UIElement_SetTextPos(ui, 8, 16);
-    UIElement_PrintText(ui, "PKMN snapped");
+    UIElement_PrintText(ui, "Pokεmon snapped");
     UIElement_SetTextPos(ui, 88, 16);
     func_8037519C_84894C(ui, "\\i%7d\\g kind%s", snappedPokemonCount, (snappedPokemonCount >= 2) ? "s" : "");
 
     UIElement_SetTextPos(ui, 8, 32);
-    func_8037519C_84894C(ui, "PKMN Signs snapped");
+    func_8037519C_84894C(ui, "Pokεmon Signs snapped");
     UIElement_SetTextPos(ui, 88, 32);
     func_8037519C_84894C(ui, "\\i%7d\\g sign%s", snappedSignCount, (snappedSignCount != 1) ? "s" : "");
 
     // AP data
     UIElement_SetTextPos(ui, 8, 51);
-    func_8037519C_84894C(ui, "PKMN Pics found");
+    func_8037519C_84894C(ui, "Pokεmon Pics found");
     UIElement_SetTextPos(ui, 88, 51);
     func_8037519C_84894C(ui, "\\i%7d\\g pic%s", gPokemonPicCount, (gPokemonPicCount != 1) ? "s" : "");
 
@@ -1855,10 +1854,41 @@ void exp_PKMNReportDetailText(UIElement* ui, s32 snappedPokemonCount, s32 snappe
     }
 }
 
+void exp_PostSubmissionReport(s32 numPokemon, s32 numPoints, s32 arg2) {
+    UNUSED s32 pad[0x7];
+    u32 reportThousands;
+    u32 reportUnits;
 
-// TODO: probably need to hook func_801E2AE8_992558 as well
-// TODO: somehow guard against client writing to save RAM at the same time as the game
+    UIElement_Draw(D_802290E0_9D8B50);
+    UIText_SetPrintDelay(0);
+    UIElement_SetFont(D_802290E0_9D8B50, FONT_12);
+    UIText_SetShadowOffset(0);
+    UIText_SetSpacing(0, 4);
 
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 2);
+    func_8037519C_84894C(D_802290E0_9D8B50, "Pokεmon Pics found");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 2);
+    func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g pic%s", gPokemonPicCount, (gPokemonPicCount != 1) ? "s" : "");
+    
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 18);
+    UIElement_PrintText(D_802290E0_9D8B50, "Sign Pics found");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 18);
+    func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g sign%s", gSignPicCount, (gSignPicCount != 1) ? "s" : "");
+
+    UIElement_SetTextPos(D_802290E0_9D8B50, 0, 34);
+    UIElement_PrintText(D_802290E0_9D8B50, "Report Score");
+    UIElement_SetTextPos(D_802290E0_9D8B50, 109, 34);
+    reportThousands = gReportScore / 1000;
+    reportUnits = gReportScore % 1000;
+    if (reportThousands > 0) {
+        if (reportUnits < 10)        func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,00%d\\g pts", reportThousands, reportUnits);
+        else if (reportUnits < 100)  func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,0%d\\g pts",  reportThousands, reportUnits);
+        else                         func_8037519C_84894C(D_802290E0_9D8B50, "\\i%3d,%d\\g pts",   reportThousands, reportUnits);
+    }
+    else {
+        func_8037519C_84894C(D_802290E0_9D8B50, "\\i%7d\\g pts", reportUnits);
+    }
+}
 
 void exp_checkReportRestore(void) {
     if (gRestoreSlot == -1) return;
