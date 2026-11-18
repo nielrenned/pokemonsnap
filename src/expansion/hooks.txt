@@ -132,3 +132,6 @@ call:photocheck_oaksMark+0x2550 = exp_photocheck_autoPressA
 # Hook the report score printing
 func_800E37CC_8A8FEC = exp_PKMNReportOverview
 func_801E0DB4_9D7724 = exp_PKMNReportDetailText
+
+# Runs every frame (for real)
+gtlUpdate = exp_gtlUpdate
